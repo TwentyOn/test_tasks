@@ -41,6 +41,12 @@ class DepartmentView(GenericViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request: Request, pk):
+        """
+        Информация для отдела  (детали + сотрудники + поддерево)
+        :param request:
+        :param pk:
+        :return:
+        """
         department = get_object_or_404(Department, pk=pk)
 
         depth = request.query_params.get('depth', 1)
