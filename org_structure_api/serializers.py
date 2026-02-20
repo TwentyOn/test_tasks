@@ -33,15 +33,18 @@ class DetailDepartmentSerializer(serializers.Serializer):
     def get_employees(self, obj):
         include_employees = self.context.get('include_employees', 'true')
         if include_employees.lower() == 'true':
-            data = EmployeeSerializer(obj.employee_set.all().order_by('created_at'), many=True)
-            return data.data
+            ee_serializer = EmployeeSerializer(obj.employee_set.all().order_by('created_at'), many=True)
+            return ee_serializer.data
         else:
             return None
 
     def get_children(self, obj):
         if self.context['cur_depth'] <= int(self.context['depth']):
             self.context['cur_depth'] += 1
+
+            # многократное обращение к БД, как можно решить?
             children = Department.objects.filter(parent_id=obj.pk)
+
             return DetailDepartmentSerializer(instance=children, many=True, context=self.context).data
         return []
 
