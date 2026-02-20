@@ -6,7 +6,7 @@ DB_SCHEME_NAME = settings.DB_SCHEME_NAME
 
 # Create your models here.
 class Department(models.Model):
-    name = models.CharField(blank=False)
+    name = models.CharField(blank=False, max_length=200)
     parent_id = models.ForeignKey('self', on_delete=models.CASCADE, db_column='parent_id', null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -16,8 +16,8 @@ class Department(models.Model):
 
 class Employee(models.Model):
     department_id = models.ForeignKey(Department, null=True, on_delete=models.SET_NULL, db_column='department_id')
-    full_name = models.CharField(blank=False)
-    position = models.CharField(blank=False)
+    full_name = models.CharField(blank=False, max_length=200)
+    position = models.CharField(blank=False, max_length=200)
     hired_at = models.DateField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
