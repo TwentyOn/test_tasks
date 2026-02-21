@@ -5,9 +5,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.request import Request
 from django.core.exceptions import ValidationError
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 
 from .serializers import DepartmentSerializer, EmployeeSerializer, DetailDepartmentSerializer
-from .models import Department, Employee
+from .models import Department
+from .openapi_error_schemes import BAD_REQUEST_RESP_SCHEMA, NOT_FOUND_RESP_SCHEMA
 
 
 # Create your views here.
@@ -15,24 +17,31 @@ class DepartmentView(GenericViewSet):
     serializer_class = DepartmentSerializer
     queryset = Department.objects.all()
 
+    @extend_schema(
+        responses={
+            201: DepartmentSerializer,
+            400: BAD_REQUEST_RESP_SCHEMA
+        }
+    )
     def create(self, request):
         """
         Создание отдела
-        :param request:
-        :return:
         """
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(
+        responses={
+            201: DepartmentSerializer,
+            400: BAD_REQUEST_RESP_SCHEMA,
+            404: NOT_FOUND_RESP_SCHEMA
+        })
     @action(methods=['post'], detail=True, url_path='employee')
     def create_employee(self, request, pk):
         """
-        Создание сотрудника
-        :param request:
-        :param pk:
-        :return:
+        Создание сотрудника в отделе
         """
         department = get_object_or_404(Department, pk=pk)
 
@@ -41,12 +50,24 @@ class DepartmentView(GenericViewSet):
             serializer.save(department_id=department)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='depth', location=OpenApiParameter.QUERY, type=int, default=1,
+                description='глубина вложенных подразделений в ответе'),
+            OpenApiParameter(
+                name='include_employees', location=OpenApiParameter.QUERY, type=bool, default=True,
+                description='включать сотрудников в ответ')
+        ],
+        responses={
+            200: DetailDepartmentSerializer,
+            400: BAD_REQUEST_RESP_SCHEMA,
+            404: NOT_FOUND_RESP_SCHEMA
+        }
+    )
     def retrieve(self, request: Request, pk):
         """
         Информация для отдела  (детали + сотрудники + поддерево)
-        :param request:
-        :param pk:
-        :return:
         """
         department = get_object_or_404(Department, pk=pk)
 
@@ -60,14 +81,50 @@ class DepartmentView(GenericViewSet):
 
         return Response(serializer.data)
 
+    @extend_schema(
+        responses={
+            200: DepartmentSerializer,
+            400: BAD_REQUEST_RESP_SCHEMA,
+            404: NOT_FOUND_RESP_SCHEMA
+        }
+    )
     def partial_update(self, request, pk):
+        """
+        Частичное обновление объекта "отдел"
+        """
         department = get_object_or_404(Department, pk=pk)
-        serializer = DepartmentSerializer(instance=department, data=request.data, partial=True)
+        serializer = self.get_serializer(instance=department, data=request.data, partial=True)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='mode', location=OpenApiParameter.QUERY, type=str,
+                description='''
+                Режим удаления
+                cascade — удалить подразделение, всех сотрудников и все дочерние подразделения 
+                reassign — удалить подразделение, а сотрудников перевести в reassign_to_department_id''',
+                enum=['cascade', 'reassign']
+            ),
+            OpenApiParameter(
+                name='reassign_to_department_id', location=OpenApiParameter.QUERY, type=int,
+                description='''
+                обязателен, если mode=reassign
+                '''
+            )
+        ],
+        responses={
+            204: None,
+            400: BAD_REQUEST_RESP_SCHEMA,
+            404: NOT_FOUND_RESP_SCHEMA
+        }
+    )
     def destroy(self, request: Request, pk):
+        """
+        Удаление отдела
+        """
         department = get_object_or_404(Department, pk=pk)
 
         mode = request.query_params.get('mode')
