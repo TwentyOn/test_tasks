@@ -11,6 +11,27 @@ class DepartmentSerializer(serializers.ModelSerializer):
             'id': {'read_only': True}
         }
 
+    def validate_parent_id(self, parent):
+        if self.instance:
+            if self.instance.pk == parent.pk:
+                raise serializers.ValidationError('Отдел не может быть родителем самого себя')
+            elif self._would_cycle(self.instance, parent):
+                raise serializers.ValidationError('Некорректное значение "parent_id" - циклическая зависимость')
+        return parent
+
+    def _would_cycle(self, instance: Department, new_parent: Department) -> bool:
+        """
+        Метод для проверки циклической зависимости
+        :param instance: изменяемый объект
+        :param new_parent: родительский объект
+        :return: True/False - цикл/нет цикла
+        """
+        cur_parent = new_parent
+        while cur_parent:
+            if cur_parent == instance:
+                return True
+            cur_parent = cur_parent.parent_id
+
 
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -47,18 +68,6 @@ class DetailDepartmentSerializer(serializers.Serializer):
 
             return DetailDepartmentSerializer(instance=children, many=True, context=self.context).data
         return []
-
-    # def get_children(self, obj):
-    #     depth = int(self.context.get('depth', 1))
-    #     cur_depth = self.context.get('cur_depth')
-    #     print(cur_depth)
-    #
-    #     if cur_depth >= depth:
-    #         return []
-    #     new_context = self.context.copy()
-    #     new_context['cur_depth'] += 1
-    #     children = Department.objects.filter(parent_id=obj.id)
-    #     return DepartmentSerializer(children, many=True, context=new_context).data
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
