@@ -1,5 +1,5 @@
 volumes:
-  compose_pd_data:
+  test_pd_data:
 services:
   backend:
     build: .
@@ -12,18 +12,18 @@ services:
     ports:
       - 8000:8000
     depends_on:
-      compose_db:
+      test_db:
         condition: service_healthy
-  compose_db:
+  test_db:
     image:
       postgres:18
-    container_name: compose_db
+    container_name: test_db
     ports:
       - 5433:5432
     environment:
       POSTGRES_PASSWORD: 643941
     volumes:
-      - compose_pd_data:/var/lib/postgresql
+      - test_pd_data:/var/lib/postgresql
       - ./initial.sql:/docker-entrypoint-initdb.d/initial.sql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
