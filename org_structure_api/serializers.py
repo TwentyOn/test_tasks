@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from drf_spectacular.utils import extend_schema_field, extend_schema
+from drf_spectacular.utils import extend_schema_field
 
 from .models import Department, Employee
-
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
