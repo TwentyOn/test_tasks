@@ -13,7 +13,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
         }
 
     def validate_parent_id(self, parent):
-        if self.instance:
+        if self.instance and parent:
             if self.instance.pk == parent.pk:
                 raise serializers.ValidationError('Отдел не может быть родителем самого себя')
             elif self._would_cycle(self.instance, parent):
@@ -39,7 +39,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         fields = '__all__'
         extra_kwargs = {
-            'id': {'read_only': True}
+            'id': {'read_only': True},
+            'department_id': {'read_only': True}
         }
 
 
