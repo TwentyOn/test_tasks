@@ -1,9 +1,10 @@
 from django.shortcuts import render, get_object_or_404
-from rest_framework import status, serializers
-from rest_framework.viewsets import ViewSet, ModelViewSet, GenericViewSet
+from rest_framework import status
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.request import Request
+from django.core.exceptions import ValidationError
 
 from .serializers import DepartmentSerializer, EmployeeSerializer, DetailDepartmentSerializer
 from .models import Department, Employee
@@ -52,38 +53,45 @@ class DepartmentView(GenericViewSet):
         depth = request.query_params.get('depth', 1)
         include_employees = request.query_params.get('include_employees', 'true')
 
-        serializer = DetailDepartmentSerializer(
-            department,
+        serializer = self.get_serializer(
+            instance=department,
             context={'include_employees': include_employees, 'depth': depth, 'cur_depth': 1}
         )
-        data = serializer.data
-        # children = self.get_dep_children(data, include_employees, depth)
-        # data['children'] = children
 
-        return Response(data)
+        return Response(serializer.data)
 
-    def get_dep_children(self, initial_data, include_employees, depth, cur_depth=1):
-        print(depth, cur_depth)
-        result = []
-        parent_id = initial_data['department']['id']
-        children = Department.objects.filter(parent_id=parent_id)
-        if children.exists():
-            initial_data['children'] = []
-            for child in children:
-                serializer = DetailDepartmentSerializer(child, context={'include_employees': include_employees})
-                data = serializer.data
-                initial_data['children'].append(data)
-                result.append(data)
+    def partial_update(self, request, pk):
+        department = get_object_or_404(Department, pk=pk)
+        serializer = DepartmentSerializer(instance=department, data=request.data, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data)
 
-        if cur_depth < int(depth):
-            for item in result:
-                self.get_dep_children(item, include_employees, depth, cur_depth + 1)
-        return result
+    def destroy(self, request: Request, pk):
+        department = get_object_or_404(Department, pk=pk)
 
+        mode = request.query_params.get('mode')
+        reassign_to_department_id = request.query_params.get('reassign_to_department_id')
+
+        if not mode:
+            return Response(
+                {'message': 'ошибка входных параметров запроса', 'detail': 'не указан режим удаления "mode"'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            department.delete_with_mode(mode, reassign_to_department_id)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ValidationError as err:
+            return Response(
+                {'message': 'ошибка при удалении ресурса', 'detail': str(err)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     def get_serializer_class(self):
-        print('action', self.action)
         if self.action == 'create_employee':
             return EmployeeSerializer
+        elif self.action == 'retrieve':
+            return DetailDepartmentSerializer
         else:
             return self.serializer_class
