@@ -23,7 +23,10 @@ class Department(models.Model):
             if not reassign_to_department_id:
                 raise ValidationError('параметр "reassign_to_department_id" обязателен для mode=reassign')
 
+            #TODO переводить только сотрудников дааного отдела или и всех дочерних?
             self.employee_set.update(department_id=reassign_to_department_id)
+
+            #TODO при reassign удаляется только данный отдел, или всё поддерево?
             # self.department_set.update(parent_id=reassign_to_department_id)
 
             self.delete()
