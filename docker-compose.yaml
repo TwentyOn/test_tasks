@@ -2,8 +2,8 @@ volumes:
   test_pd_data:
 services:
   backend:
-    build: .
-    env_file: ./docker.env
+    build: ./backend/
+    env_file: ./backend/docker.env
     command: >
       sh -c "
         python manage.py migrate &&
