@@ -1,0 +1,33 @@
+volumes:
+  compose_pd_data:
+services:
+  backend:
+    build: .
+    env_file: ./docker.env
+    command: >
+      sh -c "
+        python manage.py migrate &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+    ports:
+      - 8000:8000
+    depends_on:
+      compose_db:
+        condition: service_healthy
+  compose_db:
+    image:
+      postgres:18
+    container_name: compose_db
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_PASSWORD: 643941
+    volumes:
+      - compose_pd_data:/var/lib/postgresql
+      - ./initial.sql:/docker-entrypoint-initdb.d/initial.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
