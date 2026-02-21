@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field, extend_schema
 
 from .models import Department, Employee
+
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -47,19 +49,31 @@ class DetailDepartmentSerializer(serializers.Serializer):
     employees = serializers.SerializerMethodField()
     children = serializers.SerializerMethodField()
 
-    def get_department(self, obj):
+    def get_department(self, obj) -> DepartmentSerializer:
         dep_serializer = DepartmentSerializer(obj)
         return dep_serializer.data
 
-    def get_employees(self, obj):
+    @extend_schema_field(EmployeeSerializer)
+    def get_employees(self, obj) -> list[dict]:
         include_employees = self.context.get('include_employees', 'true')
         if include_employees.lower() == 'true':
             ee_serializer = EmployeeSerializer(obj.employee_set.all().order_by('created_at'), many=True)
             return ee_serializer.data
         else:
-            return None
+            return []
 
-    def get_children(self, obj):
+    @extend_schema_field({
+        'type': 'array',
+        'items': {
+            'type': 'object',
+            'properties': {
+                'department': {'type': 'object'},
+                'employees': {'type': 'object'},
+                'children': {'type': 'object'},
+            }
+        }
+    })
+    def get_children(self, obj) -> list[dict]:
         if self.context['cur_depth'] <= int(self.context['depth']):
             self.context['cur_depth'] += 1
 
