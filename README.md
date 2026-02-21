@@ -68,7 +68,8 @@ git clone https://github.com/TwentyOn/hitalent_test_tusk.git
 cd hitalent_test_tusk
 ```
 
-Создать файл .env в соответствии с [параграфом](https://github.com/TwentyOn/hitalent_test_tusk?tab=readme-ov-file#требования-к-переменным-окружения)
+Создать файл .env в соответствии с параграфом
+"[требования к переменным окружения](https://github.com/TwentyOn/hitalent_test_tusk?tab=readme-ov-file#требования-к-переменным-окружения)"
 
 Запустить docker-compose:
 ```
