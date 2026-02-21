@@ -7,8 +7,10 @@
 связке с БД PostgreSQL.
 
 ## Функционал
-Функционал проекта исполнен в соответствии с требованиями
-технического задания
+Функционал проекта и конечные точки API
+исполнены в соответствии с требованиями
+технического задания.
+
 
 ## Структура проекта
 - backend - серверная часть приложения
@@ -43,7 +45,7 @@ SECRET_KEY=django-insecure-mdx3c5socx7pxuh8n%iz%yg3%mjrhd*f2k@j&fieu!=s*ga--t
 DB_HOST=test_db
 DB_NAME=postgres
 DB_USER=postgres
-DB_PASSWORD=643941
+DB_PASSWORD=45652jkl
 DB_PORT=5432
 DB_SCHEME_NAME=hitalent_tusk
 ```
@@ -54,7 +56,7 @@ DB_SCHEME_NAME=hitalent_tusk
 ## Запуск
 (Команды использованы в среде windows power shell)
 
-Клонировать репозиторий:
+Клонировать репозиторий (http):
 
 ```
 git clone https://github.com/TwentyOn/hitalent_test_tusk.git
@@ -70,3 +72,9 @@ cd hitalent_test_tusk
 ```
 docker compose up
 ```
+
+
+
+После запуска OpenAPI-документация доступна по адресам:
+- schema:  http://127.0.0.1:8000/api/schema/
+- Swagger: http://127.0.0.1:8000/api/docs/

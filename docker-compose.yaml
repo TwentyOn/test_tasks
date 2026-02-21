@@ -21,7 +21,7 @@ services:
     ports:
       - 5433:5432
     environment:
-      POSTGRES_PASSWORD: 643941
+      POSTGRES_PASSWORD: 45652jkl
     volumes:
       - test_pd_data:/var/lib/postgresql
       - ./initial.sql:/docker-entrypoint-initdb.d/initial.sql
