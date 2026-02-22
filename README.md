@@ -24,7 +24,7 @@ Backend-часть архитектурно выполнена в соответ
 Специфичные модули:
   - [openapi_error_schemes.py](backend%2Forg_structure_api%2Fopenapi_error_schemes.py) -
   модуль в который вынесены стандартные
-  OPENAPI-схемы ответов при ошибках запроса
+  OpenAPI-схемы ответов при ошибках запроса
 - Dockerfile - инструкции для сборки docker-контейнера
 - requirements.txt - файл с зависимостями
 
