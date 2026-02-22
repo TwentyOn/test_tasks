@@ -9,7 +9,7 @@ DB_SCHEME_NAME = settings.DB_SCHEME_NAME
 
 class Department(models.Model):
     name = models.CharField(blank=False, max_length=200)
-    parent_id = models.ForeignKey('self', on_delete=models.CASCADE, db_column='parent_id', null=True)
+    parent_id = models.ForeignKey('self', on_delete=models.CASCADE, db_column='parent_id', null=True, default=None)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
