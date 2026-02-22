@@ -92,4 +92,6 @@ docker compose exec -it backend python manage.py test
 ```
 
 6. Остановка docker-compose
-```docker compose stop```
+```
+docker compose stop
+```
