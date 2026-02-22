@@ -87,7 +87,9 @@ docker compose up -d
 
 5. Запуск тестов (опционально)
 
-```docker compose exec -it backend python manage.py test```
+```
+docker compose exec -it backend python manage.py test
+```
 
 6. Остановка docker-compose
 ```docker compose stop```
