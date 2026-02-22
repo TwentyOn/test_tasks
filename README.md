@@ -23,7 +23,7 @@ Backend-часть архитектурно выполнена в соответ
 - org_strucure_api - django-приложение реализующее API. 
 Специфичные модули:
   - [openapi_error_schemes.py](backend%2Forg_structure_api%2Fopenapi_error_schemes.py) -
-  модуль в который вынесены стандартные
+  модуль, в который вынесены стандартные
   OpenAPI-схемы ответов при ошибках запроса
 - Dockerfile - инструкции для сборки docker-контейнера
 - requirements.txt - файл с зависимостями
