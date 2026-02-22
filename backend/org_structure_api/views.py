@@ -34,7 +34,7 @@ class DepartmentView(GenericViewSet):
 
     @extend_schema(
         responses={
-            201: DepartmentSerializer,
+            201: EmployeeSerializer,
             400: BAD_REQUEST_RESP_SCHEMA,
             404: NOT_FOUND_RESP_SCHEMA
         })
