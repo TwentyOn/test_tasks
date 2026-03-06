@@ -104,3 +104,6 @@ class Review(IsDeletedModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     rating = models.IntegerField(choices=RATING_CHOICES)
     text = models.CharField()
+
+    class Meta:
+        unique_together = [('user', 'product')]
