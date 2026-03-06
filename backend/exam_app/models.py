@@ -4,6 +4,8 @@ from autoslug import AutoSlugField
 
 from common.models import IsDeletedModel, BaseModel
 
+RATING_CHOICES = ((1, 1), (2, 2), (3, 3), (4, 4), (5, 5))
+
 
 class Seller(BaseModel):
     # Link to the User model
@@ -95,3 +97,10 @@ class Product(IsDeletedModel):
 
     def __str__(self):
         return self.name
+
+
+class Review(IsDeletedModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    rating = models.IntegerField(choices=RATING_CHOICES)
+    text = models.CharField()
