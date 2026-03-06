@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'drf_spectacular',
-    'org_structure_api.apps.OrgStructureApiConfig'
+    'common.apps.CommonConfig',
+    'exam_app.apps.ExamAppConfig'
 ]
 
 MIDDLEWARE = [
