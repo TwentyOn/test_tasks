@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_spectacular',
     'common.apps.CommonConfig',
+    'sellers.apps.SellersConfig',
     'exam_app.apps.ExamAppConfig'
 ]
 
