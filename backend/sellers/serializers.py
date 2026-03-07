@@ -10,7 +10,6 @@ class CategorySerializer(serializers.Serializer):
 class SellerShopSerializer(serializers.Serializer):
     name = serializers.CharField(source="business_name")
     slug = serializers.SlugField()
-    avatar = serializers.CharField(source="user.avatar")
 
 
 class SellerSerializer(serializers.Serializer):
