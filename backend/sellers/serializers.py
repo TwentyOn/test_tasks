@@ -1,4 +1,7 @@
 from rest_framework import serializers
+from django.db.models import Avg
+
+from exam_app.models import Review
 
 
 class CategorySerializer(serializers.Serializer):
@@ -44,6 +47,12 @@ class ProductSerializer(serializers.Serializer):
     image1 = serializers.ImageField()
     image2 = serializers.ImageField(required=False)
     image3 = serializers.ImageField(required=False)
+
+    average_rating = serializers.SerializerMethodField()
+
+    def get_average_rating(self, obj):
+        avg_rating = Review.objects.filter(product=obj).aggregate(Avg('rating'))
+        return avg_rating['rating__avg']
 
 
 class CreateProductSerializer(serializers.Serializer):
