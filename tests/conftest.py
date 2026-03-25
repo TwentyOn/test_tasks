@@ -3,11 +3,11 @@ import random
 
 import pytest
 
-from main import CSVReader, MedianCoffeeReport
+from main import CSVReader, MedianCoffeeReport, Script
 
 
 @pytest.fixture
-def fake_valid_data(faker):
+def fake_valid_data(faker) -> list:
     data = [
         {'student': faker.name(),
          'date': faker.date(),
@@ -16,6 +16,7 @@ def fake_valid_data(faker):
         for _ in range(10)
     ]
     return data
+
 
 @pytest.fixture
 def fake_valid_csv(fake_valid_data, tmp_path) -> str:
@@ -26,8 +27,7 @@ def fake_valid_csv(fake_valid_data, tmp_path) -> str:
         writer.writeheader()
         writer.writerows(fake_valid_data)
 
-
-    yield [filepath]
+    return str(filepath)
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ def fake_empty_csv(tmp_path):
         writer = csv.DictWriter(f, fieldnames=['student', 'date', 'coffee_spent'])
         writer.writeheader()
 
-    yield [str(filepath)]
+    yield str(filepath)
 
 
 @pytest.fixture
@@ -50,3 +50,7 @@ def fake_csv_reader():
 @pytest.fixture
 def fake_report(fake_csv_reader):
     return MedianCoffeeReport(fake_csv_reader)
+
+@pytest.fixture
+def fake_script_obj():
+    return Script()
