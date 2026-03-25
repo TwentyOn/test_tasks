@@ -109,6 +109,8 @@ class ReadersFactory:
 
     @classmethod
     def register(cls, name, reader_cls: FileReader):
+        if not issubclass(reader_cls, FileReader):
+            raise ValueError('reader_cls должен быть подтипом FileReader')
         cls._registry[name] = reader_cls
 
     @classmethod
@@ -130,7 +132,10 @@ class ReportFactory:
 
     @classmethod
     def register(cls, name, report_cls):
+        if not issubclass(report_cls, ConsoleReport):
+            raise ValueError('report_cls должен быть подтипом ConsoleReport')
         cls._registry[name] = report_cls
+
 
     @classmethod
     def create(cls, name, readers):
