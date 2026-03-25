@@ -94,7 +94,7 @@ class MedianCoffeeReport(ConsoleReport):
         return median_coffe_by_stud
 
     def generate(self, files: list[str]) -> str:
-        data = iter(self._read(files))
+        data = self._read(files)
         data = self._aggregate(data)
         data = self._calculate(data)
 
