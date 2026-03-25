@@ -48,16 +48,6 @@ def fake_empty_file(tmp_path):
 
 
 @pytest.fixture
-def fake_invalid_file(tmp_path):
-    filepath = tmp_path / 'invalid.file'
-
-    with open(filepath, 'w') as f:
-        pass
-
-    return str(filepath)
-
-
-@pytest.fixture
 def fake_csv_reader_cls():
     return CSVReader
 
@@ -70,14 +60,6 @@ def fake_report_obj(fake_csv_reader_cls):
 @pytest.fixture
 def fake_script_obj():
     return Script()
-
-
-@pytest.fixture
-def valid_cmd_args(tmp_path, monkeypatch):
-    files = [str(tmp_path / f'valid_csv{i}.csv') for i in range(1,4)]
-    test_args = ['script.py', '--files', *files, '--report', 'median_coffee']
-    monkeypatch.setattr(sys, 'argv', test_args)
-    return test_args
 
 
 @pytest.fixture
