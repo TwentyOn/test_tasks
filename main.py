@@ -108,23 +108,23 @@ class ReadersFactory:
     _registry = {}
 
     @classmethod
-    def register(cls, name, reader_cls: FileReader):
+    def register(cls, extension_name, reader_cls: FileReader):
         if not issubclass(reader_cls, FileReader):
             raise ValueError('reader_cls должен быть подтипом FileReader')
-        cls._registry[name] = reader_cls
+        cls._registry[extension_name] = reader_cls
 
     @classmethod
-    def create_by_files(cls, files) -> set[FileReader]:
-        result = set()
-        for filename in files:
+    def create_by_files(cls, files: list[str]) -> list[FileReader]:
+        readers = []
+        extensions = {name.split('.')[-1] for name in files}
+        for extension in extensions:
             try:
-                extension = filename.split('.')[-1]
                 reader_cls = cls._registry[extension]
-                result.add(reader_cls())
+                readers.append(reader_cls())
             except KeyError as err:
-                raise ValueError(f'неподдерживаемый формат файла: {filename}')
+                raise ValueError(f'неподдерживаемый формат файлов: {extension}')
 
-        return result
+        return readers
 
 
 class ReportFactory:
