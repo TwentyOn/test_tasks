@@ -8,18 +8,22 @@ from main import CSVReader, MedianCoffeeReport, Script
 
 @pytest.fixture
 def fake_valid_data(faker) -> list:
-    data = [
-        {'student': faker.name(),
-         'date': faker.date(),
-         'coffee_spent': str(random.randrange(100, 700))
-         }
-        for _ in range(10)
-    ]
+    data = []
+    for _ in range(10):
+        student = faker.name()
+        for __ in range(4):
+            data.append(
+                {
+                    'student': student,
+                    'date': faker.date(),
+                    'coffee_spent': str(random.randrange(100, 700))
+                }
+            )
     return data
 
 
 @pytest.fixture
-def fake_valid_csv(fake_valid_data, tmp_path) -> str:
+def fake_valid_file(fake_valid_data, tmp_path) -> str:
     filepath = tmp_path / 'valid_csv.csv'
 
     with open(filepath, 'w', encoding='utf-8', newline='') as f:
@@ -31,7 +35,7 @@ def fake_valid_csv(fake_valid_data, tmp_path) -> str:
 
 
 @pytest.fixture
-def fake_empty_csv(tmp_path):
+def fake_empty_file(tmp_path):
     filepath = tmp_path / 'empty_csv.csv'
 
     with open(filepath, 'w') as f:
@@ -48,8 +52,9 @@ def fake_csv_reader():
 
 
 @pytest.fixture
-def fake_report(fake_csv_reader):
-    return MedianCoffeeReport(fake_csv_reader)
+def fake_report_obj(fake_csv_reader):
+    return MedianCoffeeReport([fake_csv_reader])
+
 
 @pytest.fixture
 def fake_script_obj():
