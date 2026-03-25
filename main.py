@@ -109,7 +109,7 @@ class ReadersFactory:
         cls._registry[name] = reader_cls
 
     @classmethod
-    def create_by_files(cls, files) -> list[FileReader]:
+    def create_by_files(cls, files) -> set[FileReader]:
         result = set()
         for filename in files:
             try:
