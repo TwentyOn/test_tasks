@@ -3,6 +3,7 @@ import csv
 import statistics
 from collections import defaultdict
 from abc import ABC, abstractmethod
+from typing import Iterable
 
 from tabulate import tabulate
 
@@ -33,17 +34,17 @@ class ConsoleReport(ABC):
     """Асбтрактный класс для генерации отчетов"""
 
     @abstractmethod
-    def _read(self, files) -> list[dict]:
+    def _read(self, files: Iterable) -> list[dict]:
         """Логика чтения данных"""
         raise NotImplementedError
 
     @abstractmethod
-    def _aggregate(self, data) -> dict:
+    def _aggregate(self, data: Iterable) -> dict:
         """Логика аггрегирования"""
         raise NotImplementedError
 
     @abstractmethod
-    def _calculate(self, aggregate_data):
+    def _calculate(self, aggregate_data: Iterable):
         """Логика расчетов"""
         raise NotImplementedError
 
@@ -62,15 +63,6 @@ class MedianCoffeeReport(ConsoleReport):
         self.readers = readers
 
     def _read(self, files) -> list[dict]:
-        pass
-
-    def _aggregate(self, data) -> dict:
-        pass
-
-    def _calculate(self, aggregate_data):
-        pass
-
-    def generate(self, files: list[str]) -> str:
         data = []
 
         for path in files:
@@ -78,6 +70,9 @@ class MedianCoffeeReport(ConsoleReport):
                 if reader.can_read(path):
                     data.extend(reader.read(path))
 
+        return data
+
+    def _aggregate(self, data) -> dict:
         student_coffee_agg = defaultdict(list)
 
         for item in data:
@@ -88,11 +83,21 @@ class MedianCoffeeReport(ConsoleReport):
             num_coffee_spent = float(item['coffee_spent'])
             student_coffee_agg[student].append(num_coffee_spent)
 
-        str_table = {k: statistics.median(v) for k, v in student_coffee_agg.items()}
-        str_table = dict(sorted(str_table.items(), key=lambda item: item[1], reverse=True))
+        return student_coffee_agg
+
+    def _calculate(self, aggregate_data) -> dict:
+        median_coffe_by_stud = {k: statistics.median(v) for k, v in aggregate_data.items()}
+        median_coffe_by_stud = dict(sorted(median_coffe_by_stud.items(), key=lambda item: item[1], reverse=True))
+        return median_coffe_by_stud
+
+    def generate(self, files: list[str]) -> str:
+        data = iter(self._read(files))
+        data = self._aggregate(data)
+        data = self._calculate(data)
 
         headers = ('student', 'median_coffee')
-        str_table = tabulate(str_table.items(), headers=headers, tablefmt='fancy_grid')
+        str_table = tabulate(data.items(), headers=headers, tablefmt='fancy_grid')
+
         return str_table
 
 
@@ -137,33 +142,33 @@ class Script:
     Класс-оркестратор для обработки разных видов отчетов
     """
 
-    def __init__(self, files: list, report_mode: str):
-        self.files = files
-        self.report_mode = report_mode
-
     def run(self):
         try:
-            readers = ReadersFactory.create_by_files(self.files)
-            report = ReportFactory.create(self.report_mode, readers)
+            cmd_args = self.get_args()
+            report_mode = cmd_args.report
+            files = cmd_args.files
 
-            print(report.generate(self.files))
+            readers = ReadersFactory.create_by_files(files)
+            report = ReportFactory.create(report_mode, readers)
+
+            print(report.generate(files))
 
         except (ValueError, IOError) as err:
             print(f'ошибка: {str(err)}')
 
+    @staticmethod
+    def get_args() -> argparse.Namespace:
+        parser = argparse.ArgumentParser(description='Скрипт читает файлы с данными и формирует отчеты')
+        parser.add_argument('--files', nargs='+', type=str, required=True, help='путь к файлу/файлам')
+        parser.add_argument(
+            '--report',
+            type=str,
+            help='название отчета',
+            required=True,
+        )
+        args = parser.parse_args()
 
-def get_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Скрипт читает файлы с данными и формирует отчеты')
-    parser.add_argument('--files', nargs='+', type=str, required=True, help='путь к файлу/файлам')
-    parser.add_argument(
-        '--report',
-        type=str,
-        help='название отчета',
-        required=True,
-    )
-    args = parser.parse_args()
-
-    return args
+        return args
 
 
 def main() -> None:
@@ -173,11 +178,7 @@ def main() -> None:
     report_factory = ReportFactory()
     report_factory.register('median_coffee', MedianCoffeeReport)
 
-    cmd_args = get_args()
-    report_mode = cmd_args.report
-    files = cmd_args.files
-
-    script = Script(files, report_mode)
+    script = Script()
     script.run()
 
 
