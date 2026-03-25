@@ -119,7 +119,7 @@ class ReadersFactory:
                 extension = filename.split('.')[-1]
                 reader_cls = cls._registry[extension]
                 result.add(reader_cls())
-            except Exception as err:
+            except KeyError as err:
                 raise ValueError(f'неподдерживаемый формат файла: {filename}')
 
         return result
@@ -136,7 +136,7 @@ class ReportFactory:
     def create(cls, name, readers):
         print(name, readers)
         if name not in cls._registry:
-            raise ValueError(f'Неподдерживаемый отчет: {name}')
+            raise ValueError(f'неподдерживаемый отчет: {name}')
         return cls._registry[name](readers)
 
 
