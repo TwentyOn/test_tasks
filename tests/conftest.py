@@ -42,18 +42,27 @@ def fake_empty_file(tmp_path):
         writer = csv.DictWriter(f, fieldnames=['student', 'date', 'coffee_spent'])
         writer.writeheader()
 
+    return str(filepath)
+
+
+@pytest.fixture
+def fake_invalid_file(tmp_path):
+    filepath = tmp_path / 'invalid.file'
+
+    with open(filepath, 'w') as f:
+        pass
+
     yield str(filepath)
 
 
 @pytest.fixture
-def fake_csv_reader():
-    reader = CSVReader()
-    return reader
+def fake_csv_reader_cls():
+    return CSVReader
 
 
 @pytest.fixture
-def fake_report_obj(fake_csv_reader):
-    return MedianCoffeeReport([fake_csv_reader])
+def fake_report_obj(fake_csv_reader_cls):
+    return MedianCoffeeReport([fake_csv_reader_cls()])
 
 
 @pytest.fixture

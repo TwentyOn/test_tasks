@@ -3,9 +3,7 @@ import statistics
 from argparse import Namespace
 
 import pytest
-from tabulate import tabulate
 
-from main import Script
 
 
 class TestScript:
@@ -15,22 +13,36 @@ class TestScript:
 
         assert fake_script_obj.get_args() == Namespace(files=['data1.csv', 'data2.csv'], report='median_coffee')
 
+    def test_run_without_params(self, monkeypatch, fake_script_obj):
+        with pytest.raises(SystemExit):
+            fake_script_obj.run()
+
+    def test_run_invalid_files(self, capsys, monkeypatch, fake_script_obj):
+        test_args = ['script.py', '--files', 'data1.inv', 'data2.inv', '--report', 'median_coffee']
+        monkeypatch.setattr(sys, 'argv', test_args)
+
+        fake_script_obj.run()
+        stream = capsys.readouterr()
+
+        assert 'неподдерживаемый формат файла' in stream.out
+
+
 
 class TestCsvReader:
-    def test_can_read(self, fake_csv_reader):
-        assert fake_csv_reader.can_read('test.csv')
-        assert not fake_csv_reader.can_read('test.txt')
+    def test_can_read(self, fake_csv_reader_cls):
+        assert fake_csv_reader_cls().can_read('test.csv')
+        assert not fake_csv_reader_cls().can_read('test.txt')
 
-    def test_read_valid_file(self, fake_csv_reader, fake_valid_file, fake_valid_data):
-        result = fake_csv_reader.read(fake_valid_file)
+    def test_read_valid_file(self, fake_csv_reader_cls, fake_valid_file, fake_valid_data):
+        result = fake_csv_reader_cls().read(fake_valid_file)
 
         assert len(result) == len(fake_valid_data)
         assert len(result[0]) == len(fake_valid_data[0])
         assert result[5]['student'] == fake_valid_data[5]['student']
         assert result[5]['coffee_spent'] == fake_valid_data[5]['coffee_spent']
 
-    def test_read_empty_csv(self, fake_csv_reader, fake_empty_file):
-        result = fake_csv_reader.read(fake_empty_file)
+    def test_read_empty_csv(self, fake_csv_reader_cls, fake_empty_file):
+        result = fake_csv_reader_cls().read(fake_empty_file)
 
         assert len(result) == 0
         assert result == []
@@ -67,5 +79,4 @@ class TestMedianCoffeeReport:
         empty_report = fake_report_obj.generate([fake_empty_file])
 
         assert isinstance(report, str)
-
         assert isinstance(empty_report, str)
