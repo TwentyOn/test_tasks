@@ -1,8 +1,11 @@
 import sys
 import statistics
 from argparse import Namespace
+from typing import Iterable
 
 import pytest
+
+from main import ReadersFactory, ReportFactory, ConsoleReport, FileReader
 
 
 class TestScript:
@@ -15,7 +18,8 @@ class TestScript:
         with pytest.raises(SystemExit):
             fake_script_obj.run()
 
-    def test_run_with_params(self, capsys, fake_valid_files, valid_cmd_args, fake_script_obj, initial_fake_median_factories):
+    def test_run_with_params(self, capsys, fake_valid_files, valid_cmd_args, fake_script_obj,
+                             initial_fake_median_factories):
         fake_script_obj.run()
 
         stream = capsys.readouterr()
@@ -53,7 +57,7 @@ class TestCsvReader:
 
 class TestMedianCoffeeReport:
     def test_read_files(self, fake_report_obj, fake_valid_files, fake_valid_data):
-        assert len(fake_report_obj._read_files(fake_valid_files)) == len(fake_valid_data)*3
+        assert len(fake_report_obj._read_files(fake_valid_files)) == len(fake_valid_data) * 3
         assert fake_report_obj._read_files(fake_valid_files)[5]['student'] == fake_valid_data[5]['student']
 
     def test_aggregate(self, fake_report_obj, fake_valid_data, fake_valid_files):
@@ -83,3 +87,46 @@ class TestMedianCoffeeReport:
 
         assert isinstance(report, str)
         assert isinstance(empty_report, str)
+
+
+class TestFactories:
+    def test_report_factory(self):
+        factory = ReportFactory()
+
+        class TestReportClass(ConsoleReport):
+            def __init__(self, reader):
+                pass
+
+            def _read_files(self, files: Iterable) -> list[dict]:
+                pass
+
+            def _aggregate(self, data: Iterable) -> dict:
+                pass
+
+            def _calculate(self, aggregate_data: Iterable):
+                pass
+
+            def generate(self, files: list[str]):
+                pass
+
+        factory.register('sum_coffee', TestReportClass)
+        report = factory.create('sum_coffee', FileReader)
+        assert 'sum_coffee' in factory._registry
+        assert isinstance(report, TestReportClass)
+
+    def test_reader_factory(self):
+        factory = ReadersFactory()
+
+        class TestReaderClass(FileReader):
+            def read(self, filepath: str) -> list[dict]:
+                pass
+
+            def can_read(self, filepath: str) -> bool:
+                pass
+
+        factory.register('csv', TestReaderClass)
+        readers = factory.create_by_files(['data1.csv', 'data2.csv'])
+
+        assert 'csv' in factory._registry
+        assert len(readers) == 1
+        assert isinstance(readers.pop(), TestReaderClass)

@@ -54,7 +54,7 @@ def fake_invalid_file(tmp_path):
     with open(filepath, 'w') as f:
         pass
 
-    yield str(filepath)
+    return str(filepath)
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ def valid_cmd_args(tmp_path, monkeypatch):
     files = [str(tmp_path / f'valid_csv{i}.csv') for i in range(1,4)]
     test_args = ['script.py', '--files', *files, '--report', 'median_coffee']
     monkeypatch.setattr(sys, 'argv', test_args)
-    yield test_args
+    return test_args
 
 
 @pytest.fixture
@@ -87,3 +87,8 @@ def initial_fake_median_factories():
 
     report_factory = ReportFactory()
     report_factory.register('median_coffee', MedianCoffeeReport)
+
+    yield
+
+    reader_factory._registry.clear()
+    report_factory._registry.clear()
