@@ -33,9 +33,24 @@ class ConsoleReport(ABC):
     """Асбтрактный класс для генерации отчетов"""
 
     @abstractmethod
+    def _read(self, files) -> list[dict]:
+        """Логика чтения данных"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def _aggregate(self, data) -> dict:
+        """Логика аггрегирования"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def _calculate(self, aggregate_data):
+        """Логика расчетов"""
+        raise NotImplementedError
+
+    @abstractmethod
     def generate(self, files: list[str]):
         """
-        Логика генерации отчета в нужном формате
+        Логика генерации и вывода отчета
         :param files: список путей к файлам
         :return:
         """
@@ -45,6 +60,15 @@ class ConsoleReport(ABC):
 class MedianCoffeeReport(ConsoleReport):
     def __init__(self, readers: set[FileReader]):
         self.readers = readers
+
+    def _read(self, files) -> list[dict]:
+        pass
+
+    def _aggregate(self, data) -> dict:
+        pass
+
+    def _calculate(self, aggregate_data):
+        pass
 
     def generate(self, files: list[str]) -> str:
         data = []
