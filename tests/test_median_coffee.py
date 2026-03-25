@@ -37,3 +37,6 @@ class TestCsvReader:
 
         assert len(result) == 0
         assert result == []
+
+class TestReportGenerator:
+    def 

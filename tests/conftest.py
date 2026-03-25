@@ -1,5 +1,6 @@
 import csv
 import random
+from collections import namedtuple
 
 import pytest
 
@@ -7,9 +8,9 @@ from main import CSVReader, MedianCoffeeReport
 
 
 @pytest.fixture
-def valid_csv(tmp_path, faker) -> tuple[list]:
+def valid_csv(tmp_path, faker) -> namedtuple:
     filepath = tmp_path / 'valid_csv.csv'
-    fake_data = [
+    data = [
         {'student': faker.name(),
          'date': faker.date(),
          'coffee_spent': str(random.randrange(100, 700))
@@ -20,9 +21,12 @@ def valid_csv(tmp_path, faker) -> tuple[list]:
     with open(filepath, 'w', encoding='utf-8', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=['student', 'date', 'coffee_spent'])
         writer.writeheader()
-        writer.writerows(fake_data)
+        writer.writerows(data)
 
-    yield [str(filepath)], fake_data
+    FakeData = namedtuple('FakeData', ('filepath', 'data'))
+    fake_data = FakeData([filepath], data)
+
+    yield fake_data
 
 
 @pytest.fixture
