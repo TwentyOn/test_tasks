@@ -4,6 +4,7 @@ import statistics
 from collections import defaultdict
 from abc import ABC, abstractmethod
 from typing import Iterable
+import os
 
 from tabulate import tabulate
 
@@ -24,10 +25,12 @@ class CSVReader(FileReader):
 
     def read(self, filepath: str) -> list[dict]:
         result = []
-        with open(filepath, 'r', encoding='utf-8') as csv_file:
-            for line in csv.DictReader(csv_file):
-                result.append(line)
-        return result
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8') as csv_file:
+                for line in csv.DictReader(csv_file):
+                    result.append(line)
+            return result
+        raise ValueError(f'файл не найден: {filepath}')
 
 
 class ConsoleReport(ABC):
