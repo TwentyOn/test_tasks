@@ -1,6 +1,5 @@
 import sys
 import statistics
-from argparse import Namespace
 from typing import Iterable
 
 import pytest
