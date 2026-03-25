@@ -37,7 +37,7 @@ class ConsoleReport(ABC):
     """Асбтрактный класс для генерации отчетов"""
 
     @abstractmethod
-    def _read(self, files: Iterable) -> list[dict]:
+    def _read_files(self, files: Iterable) -> list[dict]:
         """Логика чтения данных"""
         raise NotImplementedError
 
@@ -65,7 +65,7 @@ class MedianCoffeeReport(ConsoleReport):
     def __init__(self, readers: set[FileReader]):
         self.readers = readers
 
-    def _read(self, files) -> list[dict]:
+    def _read_files(self, files) -> list[dict]:
         data = []
 
         for path in files:
@@ -94,7 +94,7 @@ class MedianCoffeeReport(ConsoleReport):
         return median_coffe_by_stud
 
     def generate(self, files: list[str]) -> str:
-        data = self._read(files)
+        data = self._read_files(files)
         data = self._aggregate(data)
         data = self._calculate(data)
 
@@ -134,7 +134,6 @@ class ReportFactory:
 
     @classmethod
     def create(cls, name, readers):
-        print(name, readers)
         if name not in cls._registry:
             raise ValueError(f'неподдерживаемый отчет: {name}')
         return cls._registry[name](readers)
