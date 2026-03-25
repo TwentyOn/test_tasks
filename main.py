@@ -145,6 +145,11 @@ class Script:
     Класс-оркестратор для обработки разных видов отчетов
     """
 
+    def __init__(self):
+        self.description = 'Скрипт читает файлы с данными и формирует отчеты'
+        self.files_arg = 'files'
+        self.report_arg = 'report'
+
     def run(self):
         try:
             cmd_args = self.get_args()
@@ -159,12 +164,11 @@ class Script:
         except (ValueError, IOError) as err:
             print(f'ошибка: {str(err)}')
 
-    @staticmethod
-    def get_args() -> argparse.Namespace:
-        parser = argparse.ArgumentParser(description='Скрипт читает файлы с данными и формирует отчеты')
-        parser.add_argument('--files', nargs='+', type=str, required=True, help='путь к файлу/файлам')
+    def get_args(self) -> argparse.Namespace:
+        parser = argparse.ArgumentParser(description=self.description)
+        parser.add_argument(f'--{self.files_arg}', nargs='+', type=str, required=True, help='путь к файлу/файлам')
         parser.add_argument(
-            '--report',
+            f'--{self.report_arg}',
             type=str,
             help='название отчета',
             required=True,
