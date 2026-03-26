@@ -33,10 +33,28 @@ class CSVReader:
 class ConsoleReport(ABC):
     """Асбтрактный класс для генерации отчетов"""
 
-    @abstractmethod
-    def _read_files(self, files) -> list[dict]:
-        """Логика чтения данных"""
-        raise NotImplementedError
+    def __init__(self):
+        self.reader = CSVReader()
+
+    def _read_files(self, files: list[str]) -> list[dict]:
+        data = []
+
+        for path in files:
+            data.extend(self.reader.read(path))
+
+        return data
+
+    def generate(self, files: list[str]) -> dict:
+        """
+        Логика генерации и вывода отчета
+        :param files: список путей к файлам
+        :return: словарь преобразованных данных
+        """
+        data = self._read_files(files)
+        data = self._aggregate(data)
+        data = self._calculate(data)
+
+        return data
 
     @abstractmethod
     def _aggregate(self, read_data) -> dict:
@@ -53,31 +71,8 @@ class ConsoleReport(ABC):
         """логика формирования отображения отчета"""
         raise NotImplementedError
 
-    def generate(self, files: list[str]) -> dict:
-        """
-        Логика генерации и вывода отчета
-        :param files: список путей к файлам
-        :return: словарь преобразованных данных
-        """
-        data = self._read_files(files)
-        data = self._aggregate(data)
-        data = self._calculate(data)
-
-        return data
-
 
 class MedianCoffeeReport(ConsoleReport):
-    def __init__(self):
-        self.reader = CSVReader()
-
-    def _read_files(self, files: list[str]) -> list[dict]:
-        data = []
-
-        for path in files:
-            data.extend(self.reader.read(path))
-
-        return data
-
     def _aggregate(self, data: list[dict]) -> dict:
         student_coffee_agg = defaultdict(list)
 
