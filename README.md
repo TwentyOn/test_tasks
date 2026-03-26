@@ -25,7 +25,7 @@ report_factory.register('some_report', SomeReportClass)
 ```
 
 ## Пример запуска скрипта
-![img.png](docs/img.png)
+![img.png](docs/example_launch.png)
 
 ## Запуск
 1. установить зависимости
