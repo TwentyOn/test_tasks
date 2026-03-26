@@ -1,10 +1,10 @@
-import argparse
-import csv
-import statistics
-from collections import defaultdict
-from abc import ABC, abstractmethod
-from typing import Iterable
 import os
+import csv
+import argparse
+import statistics
+from typing import Type
+from abc import ABC, abstractmethod
+from collections import defaultdict
 
 from tabulate import tabulate
 
@@ -57,23 +57,23 @@ class ConsoleReport(ABC):
         return data
 
     @abstractmethod
-    def _aggregate(self, read_data) -> dict:
+    def _aggregate(self, read_data: list[dict]) -> dict:
         """Логика аггрегирования"""
         raise NotImplementedError
 
     @abstractmethod
-    def _calculate(self, aggregate_data) -> dict:
+    def _calculate(self, aggregate_data: dict) -> dict:
         """Логика расчетов"""
         raise NotImplementedError
 
     @abstractmethod
-    def render(self, generate_data):
+    def render(self, generate_data: dict):
         """логика формирования отображения отчета"""
         raise NotImplementedError
 
 
 class MedianCoffeeReport(ConsoleReport):
-    def _aggregate(self, data: list[dict]) -> dict:
+    def _aggregate(self, data: list[dict]) -> dict[str, list[float]]:
         student_coffee_agg = defaultdict(list)
 
         for item in data:
@@ -86,12 +86,12 @@ class MedianCoffeeReport(ConsoleReport):
 
         return student_coffee_agg
 
-    def _calculate(self, aggregate_data) -> dict:
+    def _calculate(self, aggregate_data: dict) -> dict[str, float]:
         median_coffe_by_stud = {k: statistics.median(v) for k, v in aggregate_data.items()}
         median_coffe_by_stud = dict(sorted(median_coffe_by_stud.items(), key=lambda item: item[1], reverse=True))
         return median_coffe_by_stud
 
-    def render(self, generate_data):
+    def render(self, generate_data: dict) -> str:
         headers = ('student', 'median_coffee')
         str_table = tabulate(generate_data.items(), headers=headers, tablefmt='fancy_grid')
 
@@ -102,12 +102,12 @@ class ReportFactory:
     def __init__(self):
         self._registry = {}
 
-    def register(self, name, report_cls):
+    def register(self, name: str, report_cls: Type[ConsoleReport]):
         if not issubclass(report_cls, ConsoleReport):
             raise ValueError('report_cls должен быть подтипом ConsoleReport')
         self._registry[name] = report_cls
 
-    def create(self, name) -> ConsoleReport:
+    def create(self, name: str) -> ConsoleReport:
         if name not in self._registry:
             raise ValueError(f'неподдерживаемый отчет: {name}')
         return self._registry[name]()
