@@ -9,73 +9,76 @@ import os
 from tabulate import tabulate
 
 
-class FileReader(ABC):
-    @abstractmethod
-    def can_read(self, filepath: str) -> bool:
-        raise NotImplementedError
+class CSVReader:
+    def _validate_path(self, filepath: str):
+        if not os.path.exists(filepath):
+            raise ValueError(f'файл не найден: {filepath}')
+        elif not self.can_read(filepath):
+            raise ValueError(f'не поддерживаемый формат файла: {filepath}')
 
-    @abstractmethod
-    def read(self, filepath: str) -> list[dict]:
-        raise NotImplementedError
-
-
-class CSVReader(FileReader):
-    def can_read(self, filepath: str) -> bool:
+    @staticmethod
+    def can_read(filepath: str) -> bool:
         return filepath.endswith('.csv')
 
     def read(self, filepath: str) -> list[dict]:
+        self._validate_path(filepath)
+
         result = []
-        if os.path.exists(filepath):
-            with open(filepath, 'r', encoding='utf-8') as csv_file:
-                for line in csv.DictReader(csv_file):
-                    result.append(line)
-            return result
-        raise ValueError(f'файл не найден: {filepath}')
+        with open(filepath, 'r', encoding='utf-8') as csv_file:
+            for line in csv.DictReader(csv_file):
+                result.append(line)
+        return result
 
 
 class ConsoleReport(ABC):
     """Асбтрактный класс для генерации отчетов"""
 
     @abstractmethod
-    def _read_files(self, files: Iterable) -> list[dict]:
+    def _read_files(self, files) -> list[dict]:
         """Логика чтения данных"""
         raise NotImplementedError
 
     @abstractmethod
-    def _aggregate(self, data: Iterable) -> dict:
+    def _aggregate(self, read_data) -> dict:
         """Логика аггрегирования"""
         raise NotImplementedError
 
     @abstractmethod
-    def _calculate(self, aggregate_data: Iterable):
+    def _calculate(self, aggregate_data) -> dict:
         """Логика расчетов"""
         raise NotImplementedError
 
     @abstractmethod
-    def generate(self, files: list[str]):
+    def render(self, generate_data):
+        """логика формирования отображения отчета"""
+        raise NotImplementedError
+
+    def generate(self, files: list[str]) -> dict:
         """
         Логика генерации и вывода отчета
         :param files: список путей к файлам
-        :return:
+        :return: словарь преобразованных данных
         """
-        raise NotImplementedError
-
-
-class MedianCoffeeReport(ConsoleReport):
-    def __init__(self, readers: set[FileReader]):
-        self.readers = readers
-
-    def _read_files(self, files) -> list[dict]:
-        data = []
-
-        for path in files:
-            for reader in self.readers:
-                if reader.can_read(path):
-                    data.extend(reader.read(path))
+        data = self._read_files(files)
+        data = self._aggregate(data)
+        data = self._calculate(data)
 
         return data
 
-    def _aggregate(self, data) -> dict:
+
+class MedianCoffeeReport(ConsoleReport):
+    def __init__(self):
+        self.reader = CSVReader()
+
+    def _read_files(self, files: list[str]) -> list[dict]:
+        data = []
+
+        for path in files:
+            data.extend(self.reader.read(path))
+
+        return data
+
+    def _aggregate(self, data: list[dict]) -> dict:
         student_coffee_agg = defaultdict(list)
 
         for item in data:
@@ -93,55 +96,26 @@ class MedianCoffeeReport(ConsoleReport):
         median_coffe_by_stud = dict(sorted(median_coffe_by_stud.items(), key=lambda item: item[1], reverse=True))
         return median_coffe_by_stud
 
-    def generate(self, files: list[str]) -> str:
-        data = self._read_files(files)
-        data = self._aggregate(data)
-        data = self._calculate(data)
-
+    def render(self, generate_data):
         headers = ('student', 'median_coffee')
-        str_table = tabulate(data.items(), headers=headers, tablefmt='fancy_grid')
+        str_table = tabulate(generate_data.items(), headers=headers, tablefmt='fancy_grid')
 
         return str_table
 
 
-class ReadersFactory:
-    _registry = {}
-
-    @classmethod
-    def register(cls, extension_name, reader_cls: FileReader):
-        if not issubclass(reader_cls, FileReader):
-            raise ValueError('reader_cls должен быть подтипом FileReader')
-        cls._registry[extension_name] = reader_cls
-
-    @classmethod
-    def create_by_files(cls, files: list[str]) -> list[FileReader]:
-        readers = []
-        extensions = {name.split('.')[-1] for name in files}
-        for extension in extensions:
-            try:
-                reader_cls = cls._registry[extension]
-                readers.append(reader_cls())
-            except KeyError as err:
-                raise ValueError(f'неподдерживаемый формат файлов: {extension}')
-
-        return readers
-
-
 class ReportFactory:
-    _registry = {}
+    def __init__(self):
+        self.registry = {}
 
-    @classmethod
-    def register(cls, name, report_cls):
+    def register(self, name, report_cls):
         if not issubclass(report_cls, ConsoleReport):
             raise ValueError('report_cls должен быть подтипом ConsoleReport')
-        cls._registry[name] = report_cls
+        self.registry[name] = report_cls
 
-
-    @classmethod
-    def create(cls, name, readers):
-        if name not in cls._registry:
+    def create(self, name) -> ConsoleReport:
+        if name not in self.registry:
             raise ValueError(f'неподдерживаемый отчет: {name}')
-        return cls._registry[name](readers)
+        return self.registry[name]()
 
 
 class Script:
@@ -149,7 +123,9 @@ class Script:
     Класс-оркестратор для обработки разных видов отчетов
     """
 
-    def __init__(self):
+    def __init__(self, report_factory: ReportFactory):
+        self.report_factory = report_factory
+
         self.description = 'Скрипт читает файлы с данными и формирует отчеты'
         self.files_arg = 'files'
         self.report_arg = 'report'
@@ -160,12 +136,12 @@ class Script:
             report_mode = cmd_args.report
             files = cmd_args.files
 
-            readers = ReadersFactory.create_by_files(files)
-            report = ReportFactory.create(report_mode, readers)
+            report = self.report_factory.create(report_mode)
+            content = report.generate(files)
 
-            print(report.generate(files))
+            print(report.render(content))
 
-        except (ValueError, IOError) as err:
+        except ValueError as err:
             print(f'ошибка: {str(err)}')
 
     def get_args(self) -> argparse.Namespace:
@@ -183,13 +159,10 @@ class Script:
 
 
 def main() -> None:
-    readers_factory = ReadersFactory()
-    readers_factory.register('csv', CSVReader)
-
     report_factory = ReportFactory()
     report_factory.register('median_coffee', MedianCoffeeReport)
 
-    script = Script()
+    script = Script(report_factory)
     script.run()
 
 
