@@ -3,8 +3,12 @@ import csv
 import random
 
 import pytest
+from faker import Faker
 
-from main import CSVReader, MedianCoffeeReport, Script, ReadersFactory, ReportFactory
+from main import CSVReader, MedianCoffeeReport, Script, ReportFactory
+
+faker = Faker()
+Faker.seed(42)
 
 
 @pytest.fixture
@@ -24,7 +28,7 @@ def fake_valid_data(faker) -> list:
 
 
 @pytest.fixture
-def fake_valid_files(fake_valid_data, tmp_path) -> list[str]:
+def fake_valid_files(tmp_path, fake_valid_data) -> list[str]:
     filepaths = []
     for i in range(3):
         path = tmp_path / f'valid_csv{i + 1}.csv'
@@ -54,23 +58,20 @@ def fake_csv_reader_cls():
 
 @pytest.fixture
 def fake_report_obj(fake_csv_reader_cls):
-    return MedianCoffeeReport([fake_csv_reader_cls()])
+    return MedianCoffeeReport()
 
 
 @pytest.fixture
-def fake_script_obj():
-    return Script()
+def fake_script_obj(report_factory):
+    return Script(report_factory)
 
 
 @pytest.fixture
-def initial_fake_median_factories():
-    reader_factory = ReadersFactory()
-    reader_factory.register('csv', CSVReader)
-
+def report_factory():
     report_factory = ReportFactory()
-    report_factory.register('median_coffee', MedianCoffeeReport)
+    return report_factory
 
-    yield
 
-    reader_factory._registry.clear()
-    report_factory._registry.clear()
+@pytest.fixture
+def register_fake_median_report(report_factory, fake_report_obj):
+    report_factory.register('median_coffee', fake_report_obj.__class__)

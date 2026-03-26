@@ -4,38 +4,7 @@ from typing import Iterable
 
 import pytest
 
-from main import ReadersFactory, ReportFactory, ConsoleReport, FileReader
-
-
-class TestScript:
-    def test_get_args(self, tmp_path, monkeypatch, fake_script_obj):
-        files = [str(tmp_path / f'valid_csv{i}.csv') for i in range(1, 4)]
-        cmd_args = ['script.py', '--files', *files, '--report', 'median_coffee']
-        monkeypatch.setattr(sys, 'argv', cmd_args)
-
-        test_args = fake_script_obj.get_args()
-        assert all((test_file in cmd_args for test_file in test_args.files))
-        assert test_args.report in cmd_args
-
-    def test_run_without_params(self, fake_script_obj):
-        with pytest.raises(SystemExit):
-            fake_script_obj.run()
-
-    def test_run_with_params(self, capsys, fake_valid_files, fake_script_obj,
-                             initial_fake_median_factories):
-        fake_script_obj.run()
-
-        stream = capsys.readouterr()
-        assert 'student' and 'median_coffee' in stream.out
-
-    def test_run_invalid_files(self, capsys, monkeypatch, fake_script_obj):
-        test_args = ['script.py', '--files', 'data1.inv', 'data2.inv', '--report', 'median_coffee']
-        monkeypatch.setattr(sys, 'argv', test_args)
-
-        fake_script_obj.run()
-        stream = capsys.readouterr()
-
-        assert 'неподдерживаемый формат файлов' in stream.out
+from main import ReportFactory, ConsoleReport
 
 
 class TestCsvReader:
@@ -88,16 +57,16 @@ class TestMedianCoffeeReport:
         report = fake_report_obj.generate(fake_valid_files)
         empty_report = fake_report_obj.generate([fake_empty_file])
 
-        assert isinstance(report, str)
-        assert isinstance(empty_report, str)
+        assert isinstance(report, dict)
+        assert isinstance(empty_report, dict)
 
 
-class TestFactories:
+class TestReportFactory:
     def test_report_factory(self):
         factory = ReportFactory()
 
         class TestReportClass(ConsoleReport):
-            def __init__(self, reader):
+            def __init__(self):
                 pass
 
             def _read_files(self, files: Iterable) -> list[dict]:
@@ -109,27 +78,46 @@ class TestFactories:
             def _calculate(self, aggregate_data: Iterable):
                 pass
 
-            def generate(self, files: list[str]):
+            def render(self, data):
                 pass
 
         factory.register('sum_coffee', TestReportClass)
-        report = factory.create('sum_coffee', FileReader)
+        report = factory.create('sum_coffee')
         assert 'sum_coffee' in factory._registry
         assert isinstance(report, TestReportClass)
 
-    def test_reader_factory(self):
-        factory = ReadersFactory()
 
-        class TestReaderClass(FileReader):
-            def read(self, filepath: str) -> list[dict]:
-                pass
+class TestScript:
+    def test_get_args(self, tmp_path, monkeypatch, fake_script_obj):
+        files = ['data1.csv', 'data2.csv']
+        cmd_args = ['script.py', '--files', *files, '--report', 'median_coffee']
+        monkeypatch.setattr(sys, 'argv', cmd_args)
 
-            def can_read(self, filepath: str) -> bool:
-                pass
+        test_args = fake_script_obj.get_args()
+        assert all((test_file in cmd_args for test_file in test_args.files))
+        assert test_args.report in cmd_args
 
-        factory.register('csv', TestReaderClass)
-        readers = factory.create_by_files(['data1.csv', 'data2.csv'])
+    def test_run_without_params(self, fake_script_obj):
+        with pytest.raises(SystemExit):
+            fake_script_obj.run()
 
-        assert 'csv' in factory._registry
-        assert len(readers) == 1
-        assert isinstance(readers.pop(), TestReaderClass)
+    def test_run_with_params(self, capsys, tmp_path, monkeypatch, fake_valid_files, fake_script_obj,
+                             register_fake_median_report):
+        files = [str(tmp_path / f'valid_csv{i}.csv') for i in range(1, 4)]
+        cmd_args = ['script.py', '--files', *files, '--report', 'median_coffee']
+        monkeypatch.setattr(sys, 'argv', cmd_args)
+
+        fake_script_obj.run()
+        stream = capsys.readouterr()
+
+        assert 'student' in stream.out
+        assert 'median_coffee' in stream.out
+
+    def test_run_nonexist_files(self, capsys, monkeypatch, fake_script_obj, register_fake_median_report):
+        test_args = ['script.py', '--files', 'data1.csv', 'data2.csv', '--report', 'median_coffee']
+        monkeypatch.setattr(sys, 'argv', test_args)
+
+        fake_script_obj.run()
+        stream = capsys.readouterr()
+
+        assert 'файл не найден' in stream.out
