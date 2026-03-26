@@ -105,17 +105,17 @@ class MedianCoffeeReport(ConsoleReport):
 
 class ReportFactory:
     def __init__(self):
-        self.registry = {}
+        self._registry = {}
 
     def register(self, name, report_cls):
         if not issubclass(report_cls, ConsoleReport):
             raise ValueError('report_cls должен быть подтипом ConsoleReport')
-        self.registry[name] = report_cls
+        self._registry[name] = report_cls
 
     def create(self, name) -> ConsoleReport:
-        if name not in self.registry:
+        if name not in self._registry:
             raise ValueError(f'неподдерживаемый отчет: {name}')
-        return self.registry[name]()
+        return self._registry[name]()
 
 
 class Script:
