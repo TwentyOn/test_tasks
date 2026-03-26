@@ -69,9 +69,5 @@ def fake_script_obj(report_factory):
 @pytest.fixture
 def report_factory():
     report_factory = ReportFactory()
+    report_factory.register('median_coffee', MedianCoffeeReport)
     return report_factory
-
-
-@pytest.fixture
-def register_fake_median_report(report_factory, fake_report_obj):
-    report_factory.register('median_coffee', fake_report_obj.__class__)
