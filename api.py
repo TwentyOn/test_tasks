@@ -93,13 +93,14 @@ class CardParser:
             print('не удалось найти карту', urls)
             return 'None3', dict()
 
+
 class CatalogParser:
     """Парсер каталога товаров по телу поискового запроса"""
-    def __init__(self):
-        self.page = 1
-        
+
+    def __init__(self, card_parser: CardParser):
+        self.card_parser = card_parser
         self.api_url_form = 'https://www.wildberries.ru/__internal/u-search/exactmatch/ru/common/v18/search?ab_testing=false&appType=1&curr=rub&dest=123585581&hide_vflags=4294967296&lang=ru&page={}&query={}&resultset=catalog&sort=popular&spp=30&suppressSpellcheck=false'
-        self.api_url_headers = {
+        self.api_headers = {
             'authority': 'www.wildberries.ru',
             'method': 'GET',
             'path': '/__internal/u-search/exactmatch/ru/common/v18/search?ab_testing=false&appType=1&curr=rub&dest=-1257786&hide_vflags=4294967296&inheritFilters=false&lang=ru&query=%D0%BF%D0%B0%D0%BB%D1%8C%D1%82%D0%BE+%D0%B8%D0%B7+%D0%BD%D0%B0%D1%82%D1%83%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%B9+%D1%88%D0%B5%D1%80%D1%81%D1%82%D0%B8&resultset=catalog&sort=popular&spp=30&suppressSpellcheck=false',
@@ -124,6 +125,87 @@ class CatalogParser:
             'x-userid': '0'
         }
 
+    async def parse_catalog(self, query, page=1):
+        parsed_data = []
+        encoded_query = urllib.parse.quote(query)
+
+        while True:
+            page_url = self.api_url_form.format(page, encoded_query)
+            response = requests.get(page_url, headers=self.api_headers)
+            products = response.json()
+
+            for i, item in enumerate(products['products']):
+                card_parse_start = time.perf_counter()
+                item_data = {}
+                article_id = item['id']
+                print('https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id), i + 1)
+                name = item.get('name', 'нет имени')
+
+                price = item.get('sizes')
+                price = price[0] if price else dict()
+                price = price.get('price', dict())
+                price = price.get('product')
+                price = price // 100 if price else 'бесценно'
+
+                sizes = item.get('sizes', dict(name='размеры не указаны'))
+                sizes = ', '.join(size_item['name'] for size_item in sizes)
+
+                seller_name = item.get('supplier', 'продавец не указан')
+                seller_link = item.get('supplierId')
+                seller_link = 'https://www.wildberries.ru/seller/{}'.format(
+                    seller_link) if seller_link else 'не указано'
+
+                quantity = item.get('totalQuantity', 'неизвестно')
+                rating = item.get('nmReviewRating', 'неизвестно')
+                rating_count = item.get('feedbacks', 'неизвестно')
+
+                bucket_id, card_json = await self.card_parser.get_card_json(article_id)
+                description = card_json.get('description', 'описание не указано')
+
+                specifications = card_json.get('options', [])
+                specifications = [': '.join((op_item['name'], op_item['value'])) for op_item in specifications]
+                specifications = '\n'.join(specifications) if specifications else 'характеристики не указаны'
+
+                image_count = card_json.get('media', dict()).get('photo_count', 0)
+                image_links = self.get_image_links(bucket_id, article_id, image_count)
+
+                item_data['card_link'] = 'https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id)
+                item_data['article'] = article_id
+                item_data['name'] = name
+                item_data['price'] = price
+                item_data['description'] = description
+                item_data['image_links'] = image_links
+                item_data['specifications'] = specifications
+                item_data['seller_name'] = seller_name
+                item_data['seller_link'] = seller_link
+                item_data['sizes'] = sizes
+                item_data['quantity'] = quantity
+                item_data['rating'] = rating
+                item_data['rating_count'] = rating_count
+
+                print('card parse end', time.perf_counter() - card_parse_start)
+                parsed_data.append(item_data)
+
+            if len(parsed_data) == products['total']:
+                XLSXFormatter().generate_file(parsed_data)
+                break
+
+            page += 1
+            print(
+                'кол-во данных спаршено: {}/{} ({:.2f}%)'.format(len(parsed_data), products['total'],
+                                                                 len(parsed_data) / products['total'] * 100))
+            sleep(random.uniform(0.5, 2.0))
+
+    def get_image_links(self, bucket_id, article_id, count):
+        url_form = 'https://basket-{:02d}.wbbasket.ru/vol{}/part{}/{}/images/big/{}.webp'
+        vol = article_id // 100000
+        part = article_id // 1000
+        result = []
+        for i in range(1, count + 1):
+            result.append(url_form.format(bucket_id, vol, part, article_id, i))
+
+        return ', '.join(result)
+
 
 def get_image_links(bucket_id, article_id, count):
     url_form = 'https://basket-{:02d}.wbbasket.ru/vol{}/part{}/{}/images/big/{}.webp'
@@ -137,71 +219,9 @@ def get_image_links(bucket_id, article_id, count):
 
 
 async def main(query):
-    page = 1
-    data = []
     card_parser = CardParser()
-    while True:
-        products = requests.get(api_url_form.format(page, urllib.parse.quote(query)), headers=api__url_headers).json()
-        for i, item in enumerate(products['products']):
-            card_parse_start = time.perf_counter()
-            item_data = {}
-            article_id = item['id']
-            print('https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id), i + 1)
-            name = item.get('name', 'нет имени')
-
-            price = item.get('sizes')
-            price = price[0] if price else dict()
-            price = price.get('price', dict())
-            price = price.get('product')
-            price = price // 100 if price else 'бесценно'
-
-            sizes = item.get('sizes', dict(name='размеры не указаны'))
-            sizes = ', '.join(size_item['name'] for size_item in sizes)
-
-            seller_name = item.get('supplier', 'продавец не указан')
-            seller_link = item.get('supplierId')
-            seller_link = 'https://www.wildberries.ru/seller/{}'.format(seller_link) if seller_link else 'не указано'
-
-            quantity = item.get('totalQuantity', 'неизвестно')
-            rating = item.get('nmReviewRating', 'неизвестно')
-            rating_count = item.get('feedbacks', 'неизвестно')
-
-            bucket_id, card_json = await card_parser.get_card_json(article_id)
-            description = card_json.get('description', 'описание не указано')
-
-            specifications = card_json.get('options', [])
-            specifications = [': '.join((op_item['name'], op_item['value'])) for op_item in specifications]
-            specifications = '\n'.join(specifications) if specifications else 'характеристики не указаны'
-
-            image_count = card_json.get('media', dict()).get('photo_count', 0)
-            image_links = get_image_links(bucket_id, article_id, image_count)
-
-            item_data['card_link'] = 'https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id)
-            item_data['article'] = article_id
-            item_data['name'] = name
-            item_data['price'] = price
-            item_data['description'] = description
-            item_data['image_links'] = image_links
-            item_data['specifications'] = specifications
-            item_data['seller_name'] = seller_name
-            item_data['seller_link'] = seller_link
-            item_data['sizes'] = sizes
-            item_data['quantity'] = quantity
-            item_data['rating'] = rating
-            item_data['rating_count'] = rating_count
-
-            print('card parse end', time.perf_counter() - card_parse_start)
-            data.append(item_data)
-
-        if len(data) == products['total']:
-            XLSXFormatter().generate_file(data)
-            break
-
-        page += 1
-        print(
-            'кол-во данных спаршено: {}/{} ({:.2f}%)'.format(len(data), products['total'],
-                                                             len(data) / products['total'] * 100))
-        sleep(random.uniform(0.5, 2.0))
+    pars = CatalogParser(card_parser)
+    data = await pars.parse_catalog('пальто из натуральной шерсти')
 
 
 start = time.perf_counter()
