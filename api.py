@@ -93,6 +93,37 @@ class CardParser:
             print('не удалось найти карту', urls)
             return 'None3', dict()
 
+class CatalogParser:
+    """Парсер каталога товаров по телу поискового запроса"""
+    def __init__(self):
+        self.page = 1
+        
+        self.api_url_form = 'https://www.wildberries.ru/__internal/u-search/exactmatch/ru/common/v18/search?ab_testing=false&appType=1&curr=rub&dest=123585581&hide_vflags=4294967296&lang=ru&page={}&query={}&resultset=catalog&sort=popular&spp=30&suppressSpellcheck=false'
+        self.api_url_headers = {
+            'authority': 'www.wildberries.ru',
+            'method': 'GET',
+            'path': '/__internal/u-search/exactmatch/ru/common/v18/search?ab_testing=false&appType=1&curr=rub&dest=-1257786&hide_vflags=4294967296&inheritFilters=false&lang=ru&query=%D0%BF%D0%B0%D0%BB%D1%8C%D1%82%D0%BE+%D0%B8%D0%B7+%D0%BD%D0%B0%D1%82%D1%83%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%B9+%D1%88%D0%B5%D1%80%D1%81%D1%82%D0%B8&resultset=catalog&sort=popular&spp=30&suppressSpellcheck=false',
+            'scheme': 'https',
+            'accept': '*/*',
+            'accept-encoding': 'json',
+            'accept-language': 'ru,en;q=0.9',
+            'cookie': '_wbauid=881974751774285031; x_wbaas_token=1.1000.c4aa4909cd4d4840ae01780704311326.MTV8NDUuODguMjAyLjEyMXxNb3ppbGxhLzUuMCAoV2luZG93cyBOVCAxMC4wOyBXaW42NDsgeDY0KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTQ0LjAuMC4wIFlhQnJvd3Nlci8yNi4zLjAuMCBTYWZhcmkvNTM3LjM2fDE3NzU3MjM4MDh8cmV1c2FibGV8MnxleUpvWVhOb0lqb2lJbjA9fDB8M3wxNzc1MTE5MDA4fDE=.MEQCIEMHQJpjKj9MGMVNT+HT2udACR2B+OjlrHYA6cfR6F+aAiBWAiGHaRg0nCZParTXemyj6bl4jW4TNRf0WAjq/wo4eQ==; _cp=1; feedbacks_link_accepted=1',
+            'deviceid': 'site_aa794f41ab3441ed8c0f2471f2d477cd',
+            'priority': 'u=1, i',
+            'referer': 'https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BF%D0%B0%D0%BB%D1%8C%D1%82%D0%BE%20%D0%B8%D0%B7%20%D0%BD%D0%B0%D1%82%D1%83%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%B9%20%D1%88%D0%B5%D1%80%D1%81%D1%82%D0%B8',
+            'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "YaBrowser";v="26.3", "Yowser";v="2.5"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-origin',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 YaBrowser/26.3.0.0 Safari/537.36,',
+            'x-queryid': 'qid88197475177428503120260328064413',
+            'x-requested-with': 'XMLHttpRequest',
+            'x-spa-version': '14.3.2',
+            'x-userid': '0'
+        }
+
 
 def get_image_links(bucket_id, article_id, count):
     url_form = 'https://basket-{:02d}.wbbasket.ru/vol{}/part{}/{}/images/big/{}.webp'
