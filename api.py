@@ -38,6 +38,10 @@ api__url_headers = {
 
 
 class CardParser:
+    """
+    Парсер для извелчения детальной информации по каждой карточке товара
+    """
+
     def __init__(self):
         self.api_url_form = 'https://basket-{:02d}.wbbasket.ru/vol{}/part{}/{}/info/ru/card.json'
         self.headers = {
@@ -90,60 +94,6 @@ class CardParser:
             return 'None3', dict()
 
 
-async def find_url(urls, headers):
-    async with aiohttp.ClientSession() as session:
-        semaphore = asyncio.Semaphore(10)
-
-        async def check_url(url, ind):
-            async with semaphore:
-                try:
-                    async with session.get(url, headers=headers, timeout=5) as resp:
-                        if resp.status == 200:
-                            content = await resp.json()
-                            return ind, content
-                        return None
-                except Exception as err:
-                    print(traceback.format_exc())
-                    print(url)
-                    return None
-
-        tasks = []
-        for ind, url in enumerate(urls, start=1):
-            task = asyncio.create_task(check_url(url, ind))
-            tasks.append(task)
-
-        for coro in asyncio.as_completed(tasks):
-            result = await coro
-            if result:
-                # Отмена остальных задач
-                for task in tasks:
-                    task.cancel()
-                return result
-        print('не удалось найти карту', urls)
-        return 'None3', dict()
-
-
-async def get_card_json(article_id, retry=3):
-    card_url = 'https://basket-{:02d}.wbbasket.ru/vol{}/part{}/{}/info/ru/card.json'
-
-    card_headers = {
-        'refer': 'https://www.wildberries.ru/catalog/874597327/detail.aspx?size=1317986564',
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'sec-ch-ua': 'Not(A:Brand";v="8", "Chromium";v="144", "YaBrowser";v="26.3", "Yowser";v="2.5',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': "Windows"
-
-    }
-
-    vol = article_id // 100000
-    part = article_id // 1000
-
-    urls = [card_url.format(buck_id, vol, part, article_id) for buck_id in range(1, 44)]
-    bucket_id, card_json = await find_url(urls, card_headers)
-
-    return bucket_id, card_json
-
-
 def get_image_links(bucket_id, article_id, count):
     url_form = 'https://basket-{:02d}.wbbasket.ru/vol{}/part{}/{}/images/big/{}.webp'
     vol = article_id // 100000
@@ -158,6 +108,7 @@ def get_image_links(bucket_id, article_id, count):
 async def main(query):
     page = 1
     data = []
+    card_parser = CardParser()
     while True:
         products = requests.get(api_url_form.format(page, urllib.parse.quote(query)), headers=api__url_headers).json()
         for i, item in enumerate(products['products']):
@@ -184,7 +135,7 @@ async def main(query):
             rating = item.get('nmReviewRating', 'неизвестно')
             rating_count = item.get('feedbacks', 'неизвестно')
 
-            bucket_id, card_json = await get_card_json(article_id)
+            bucket_id, card_json = await card_parser.get_card_json(article_id)
             description = card_json.get('description', 'описание не указано')
 
             specifications = card_json.get('options', [])
