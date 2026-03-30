@@ -234,7 +234,7 @@ class Parser:
 
 class XLSXFormatter:
     def __init__(self):
-        self.document = xlsxwriter.Workbook('text.xlsx')
+        self.document = xlsxwriter.Workbook('../text.xlsx')
         self.sheet = self.document.add_worksheet()
 
     def __write_header(self, headers):
