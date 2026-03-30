@@ -10,6 +10,7 @@ import aiohttp
 import requests
 
 from xlsx_formatter import XLSXFormatter
+from xlsx_selection import filter_xlsx
 from get_cookie import get_cookie_string
 
 logging.basicConfig(level=logging.INFO, format='[{asctime}] #{levelname:4} {name}:{lineno} - {message}', style='{')
@@ -277,7 +278,9 @@ async def main(query: str):
     pars = CatalogParser(card_parser)
     data = await pars.parse_catalog(query)
 
-    xlsx_fmt.generate_file(data)
+    out_xlsx_path = xlsx_fmt.generate_file(data)
+    filter_xlsx(out_xlsx_path)
+
 
 
 if __name__ == '__main__':

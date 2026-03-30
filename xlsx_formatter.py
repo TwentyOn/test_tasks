@@ -1,4 +1,5 @@
 import logging
+from datetime import date
 
 import xlsxwriter
 
@@ -6,16 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 class XLSXFormatter:
-    def __init__(self, filename='parsed_data.xlsx'):
-        if not filename.endswith('.xlsx'):
-            raise ValueError('некорректное имя файла')
+    def __init__(self):
+        self.document = xlsxwriter.Workbook()
 
-        self.document = xlsxwriter.Workbook(filename)
-        self.sheet = self.document.add_worksheet()
-
-    def __write_header(self, headers):
+    def __write_header(self, sheet, headers):
         for i, header in enumerate(headers):
-            self.sheet.write(0, i, header)
+            sheet.write(0, i, header)
 
     def __formate_specification(self, value: dict):
         spec_contet = ''
@@ -26,18 +23,28 @@ class XLSXFormatter:
 
         return spec_contet
 
-    def generate_file(self, data: list[dict], name='parsed_data.xlsx'):
+    def generate_file(self, data: list[dict], name: str = 'parsed_data.xlsx'):
         logger.info('формирование xlsx-файла...')
+
+        if not name.endswith('.xlsx'):
+            raise ValueError('некорректное имя файла')
+
+        name, ext = name.split('.')
+        filename = '{}_{}.{}'.format(name, date.today(), ext)
+        self.document.filename = filename
+        sheet = self.document.add_worksheet()
 
         headers = [
             'ссылка на товар', 'артикул', "название", "цена", "описание", "ссылки на изображения",
             "характеристики", "продавец", "ссылка на продавца", "размеры", "остатки", "рейтинг", "кол-во отзывов"
         ]
-        self.__write_header(headers)
+        self.__write_header(sheet, headers)
 
         for i, item in enumerate(data, start=1):
             for j, k in enumerate(item):
                 val = item[k]
-                self.sheet.write_string(i, j, str(val))
+                sheet.write_string(i, j, str(val))
 
         self.document.close()
+
+        return filename
