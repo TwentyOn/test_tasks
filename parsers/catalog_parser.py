@@ -95,9 +95,10 @@ class CatalogParser:
                     rating_count=item.get('feedbacks', self.empty_item_placeholder)
                 )
 
+                elapsed = perf_counter() - start_time
                 parsed_data.append(product)
-                logger.debug('время: {:.2f}с'.format(perf_counter() - start_time))
-                times.append(perf_counter() - start_time)
+                logger.debug('время: {:.2f}с'.format(elapsed))
+                times.append(elapsed)
 
             page += 1
 
@@ -106,10 +107,7 @@ class CatalogParser:
 
             logger.info('среднее время на элемент: {:.2f}с'.format(statistics.mean(times)))
 
-            # if len(parsed_data) >= products['total']:
-            #     return parsed_data
-
-            if len(parsed_data) >= 100:
+            if len(parsed_data) >= products['total']:
                 return parsed_data
 
             sleep(random.uniform(0.5, 2.0))
