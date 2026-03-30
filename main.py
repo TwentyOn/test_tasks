@@ -7,7 +7,11 @@ from parsers.card_parser import CardParser
 from xlsx_processing.xlsx_formatter import XLSXFormatter
 from xlsx_processing.xlsx_selection import filter_xlsx
 
-logging.basicConfig(level=logging.INFO, format='[{asctime}] #{levelname:4} {name}:{lineno} - {message}', style='{')
+logging.basicConfig(
+    level=logging.INFO,
+    format='[{asctime}] #{levelname:4} {name}:{lineno} - {message}',
+    style='{'
+)
 logger = logging.getLogger(__name__)
 
 
