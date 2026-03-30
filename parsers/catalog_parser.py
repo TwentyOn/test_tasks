@@ -86,7 +86,7 @@ class CatalogParser:
                     'price': self.__get_price(item),
                     'description': card_data.get('description', self.empty_item_placeholder),
                     'image_links': card_data.get('image_links', self.empty_item_placeholder),
-                    'specification': card_data.get('specification', self.empty_item_placeholder),
+                    'specifications': card_data.get('specifications', self.empty_item_placeholder),
                     'seller_name': item.get('supplier', self.empty_item_placeholder),
                     'seller_link': self.__get_seller_link(item),
                     'sizes': self.__get_sizes(item),
@@ -107,8 +107,9 @@ class CatalogParser:
 
             logger.info('среднее время на элемент: {:.2f}с'.format(statistics.mean(times)))
 
-            if len(parsed_data) == 100:
+            if len(parsed_data) >= products['total']:
                 return parsed_data
+
 
             sleep(random.uniform(0.5, 2.0))
 
