@@ -73,32 +73,28 @@ class CatalogParser:
             times = []
             for i, item in enumerate(products['products']):
                 start_time = perf_counter()
-                item_data = {}
 
                 article_id = item['id']
-                logger.debug('https://www.wildberries.ru/catalog/{}/detail.aspx {}'.format(article_id, i+1))
-                name = item.get('name', 'нет имени')
-                quantity = item.get('totalQuantity', self.empty_item_placeholder)
-                price = self.__get_price(item)
-                sizes = self.__get_sizes(item)
-                seller_name = item.get('supplier', self.empty_item_placeholder)
-                seller_link = self.__get_seller_link(item)
-                rating = item.get('nmReviewRating', self.empty_item_placeholder)
-                rating_count = item.get('feedbacks', self.empty_item_placeholder)
+                logger.debug('парсинг: https://www.wildberries.ru/catalog/{}/detail.aspx {}/100'.format(article_id, i + 1))
 
                 card_data = await self.card_parser.card_parse(article_id)
 
-                item_data['card_link'] = 'https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id)
-                item_data['article'] = article_id
-                item_data['name'] = name
-                item_data['price'] = price
-                item_data.update(card_data)
-                item_data['seller_name'] = seller_name
-                item_data['seller_link'] = seller_link
-                item_data['sizes'] = sizes
-                item_data['quantity'] = quantity
-                item_data['rating'] = rating
-                item_data['rating_count'] = rating_count
+                item_data = {
+                    'card_link': 'https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id),
+                    'article': article_id,
+                    'name': item.get('name', self.empty_item_placeholder),
+                    'price': self.__get_price(item),
+                    'description': card_data.get('description', self.empty_item_placeholder),
+                    'image_links': card_data.get('image_links', self.empty_item_placeholder),
+                    'specification': card_data.get('specification', self.empty_item_placeholder),
+                    'seller_name': item.get('supplier', self.empty_item_placeholder),
+                    'seller_link': self.__get_seller_link(item),
+                    'sizes': self.__get_sizes(item),
+                    'quantity': item.get('totalQuantity', self.empty_item_placeholder),
+                    'rating': item.get('nmReviewRating', self.empty_item_placeholder),
+                    'rating_count': item.get('feedbacks', self.empty_item_placeholder)
+
+                }
 
                 parsed_data.append(item_data)
                 logger.debug('время: {:.2f}с'.format(perf_counter() - start_time))
@@ -107,7 +103,7 @@ class CatalogParser:
             page += 1
 
             logger.info('прогресс: {}/{} ({:.2f}%)'.format(len(parsed_data), products['total'],
-                                                   len(parsed_data) / products['total'] * 100))
+                                                           len(parsed_data) / products['total'] * 100))
 
             logger.info('среднее время на элемент: {:.2f}с'.format(statistics.mean(times)))
 
