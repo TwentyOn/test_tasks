@@ -8,7 +8,7 @@ from xlsx_processing.xlsx_formatter import XLSXFormatter
 from xlsx_processing.xlsx_selection import filter_xlsx
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='[{asctime}] #{levelname:4} {name}:{lineno} - {message}',
     style='{'
 )

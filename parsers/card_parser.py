@@ -1,7 +1,9 @@
 import asyncio
-import traceback
+import logging
 
 import aiohttp
+
+logger = logging.getLogger(__name__)
 
 
 class CardParser:
@@ -76,8 +78,7 @@ class CardParser:
                                 return bucket_ind, content
                             return None
                     except Exception as err:
-                        print(traceback.format_exc())
-                        print(url)
+                        logger.error(err, exc_info=True)
                         return None
 
             tasks = []
@@ -92,7 +93,7 @@ class CardParser:
                     for task in tasks:
                         task.cancel()
                     return result
-            print('не удалось найти карту', urls)
+            logger.warning('не удалось найти найти url {}'.format('\n'.join(urls)))
             return None, dict()
 
     @staticmethod

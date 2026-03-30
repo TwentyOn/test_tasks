@@ -1,12 +1,17 @@
 import random
+import statistics
 import urllib.parse
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from time import sleep, perf_counter
+import logging
 
 import requests
+import pandas as pd
 
 from utils.get_cookie import get_cookie_string
 from parsers.card_parser import CardParser
+
+logger = logging.getLogger(__name__)
 
 
 class CatalogParser:
@@ -50,9 +55,10 @@ class CatalogParser:
         parsed_data = []
         encoded_query = urllib.parse.quote(query)
 
-        cookie_url = urlparse(self.api_url_form)
-        cookie_url = cookie_url._replace(path='', query='')
-        cookie = get_cookie_string(cookie_url.geturl())
+        cookie_url = urljoin(self.api_url_form, '/')
+        print(cookie_url)
+        cookie = get_cookie_string(cookie_url)
+
         self.api_headers['cookie'] = cookie
         self.api_headers[
             'path'] = '/__internal/u-search/exactmatch/ru/common/v18/search?ab_testing=false&appType=1&curr=rub&dest=-1257786&hide_vflags=4294967296&inheritFilters=false&lang=ru&query={}&resultset=catalog&sort=popular&spp=30&suppressSpellcheck=false'.format(
@@ -70,7 +76,7 @@ class CatalogParser:
                 item_data = {}
 
                 article_id = item['id']
-                print('https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id), i + 1)
+                logger.debug('https://www.wildberries.ru/catalog/{}/detail.aspx {}'.format(article_id, i+1))
                 name = item.get('name', 'нет имени')
                 quantity = item.get('totalQuantity', self.empty_item_placeholder)
                 price = self.__get_price(item)
@@ -95,15 +101,15 @@ class CatalogParser:
                 item_data['rating_count'] = rating_count
 
                 parsed_data.append(item_data)
-                print('время: {:.2f}с'.format(perf_counter() - start_time))
+                logger.debug('время: {:.2f}с'.format(perf_counter() - start_time))
                 times.append(perf_counter() - start_time)
 
             page += 1
 
-            print(
-                'прогресс: {}/{} ({:.2f}%)'.format(len(parsed_data), products['total'],
+            logger.info('прогресс: {}/{} ({:.2f}%)'.format(len(parsed_data), products['total'],
                                                    len(parsed_data) / products['total'] * 100))
-            print('среднее время на элемент: {:.2f}с'.format(sum(times) / len(times)))
+
+            logger.info('среднее время на элемент: {:.2f}с'.format(statistics.mean(times)))
 
             if len(parsed_data) == 100:
                 return parsed_data
