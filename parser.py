@@ -1,18 +1,17 @@
 import asyncio
 import random
-import time
 import traceback
 import urllib.parse
-from time import sleep
-import logging
 from urllib.parse import urlparse
+from time import sleep, perf_counter
+import logging
 
 import aiohttp
 import requests
-from requests.exceptions import ReadTimeout
 
 from xlsx_formatter import XLSXFormatter
 from get_cookie import get_cookie_string
+
 
 logging.basicConfig(level=logging.INFO, format='[{asctime}] #{levelname:4} {name}:{lineno} - {message}', style='{')
 logger = logging.getLogger(__name__)
@@ -160,7 +159,7 @@ class CatalogParser:
             products = response.json()
             times = []
             for i, item in enumerate(products['products']):
-                start_time = time.perf_counter()
+                start_time = perf_counter()
                 item_data = {}
 
                 article_id = item['id']
@@ -189,8 +188,8 @@ class CatalogParser:
                 item_data['rating_count'] = rating_count
 
                 parsed_data.append(item_data)
-                print('время: {:.2f}с'.format(time.perf_counter() - start_time))
-                times.append(time.perf_counter() - start_time)
+                print('время: {:.2f}с'.format(perf_counter() - start_time))
+                times.append(perf_counter() - start_time)
 
             page += 1
             print('среднее время на элемент: {}с'.format(sum(times) / len(times)))
@@ -250,11 +249,11 @@ async def main(query):
 
 
 if __name__ == '__main__':
-    start = time.perf_counter()
+    start = perf_counter()
     try:
         asyncio.run(main('пальто из натуральной шерсти'))
     except Exception as err:
         print(traceback.format_exc())
     finally:
-        end = time.perf_counter() - start
+        end = perf_counter() - start
         print('парсинг данных завершился за {:.0f}м {:.2f}с'.format(end // 60, end % 60))

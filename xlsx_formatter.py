@@ -5,8 +5,11 @@ import xlsxwriter
 logger = logging.getLogger(__name__)
 
 class XLSXFormatter:
-    def __init__(self):
-        self.document = xlsxwriter.Workbook('text.xlsx')
+    def __init__(self, filename='parsed_data.xlsx'):
+        if not filename.endswith('.xlsx'):
+            raise ValueError('некорректное имя файла')
+
+        self.document = xlsxwriter.Workbook(filename)
         self.sheet = self.document.add_worksheet()
 
     def __write_header(self, headers):
@@ -24,10 +27,6 @@ class XLSXFormatter:
 
     def generate_file(self, data: list[dict], name='parsed_data.xlsx'):
         logger.info('формирование xlsx-файла...')
-
-        if not name.endswith('.xlsx'):
-            logger.error('некорректное имя файла в параметре name')
-            return
 
         headers = [
             'ссылка на товар', 'артикул', "название", "цена", "описание", "ссылки на изображения",
