@@ -4,6 +4,7 @@ import xlsxwriter
 
 logger = logging.getLogger(__name__)
 
+
 class XLSXFormatter:
     def __init__(self, filename='parsed_data.xlsx'):
         if not filename.endswith('.xlsx'):
