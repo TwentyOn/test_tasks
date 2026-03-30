@@ -183,9 +183,9 @@ class CatalogParser:
         while True:
             page_url = self.api_url_form.format(page, encoded_query)
             response = requests.get(page_url, headers=self.api_headers)
-            products = response.json().get(['products'], [])
+            products = response.json()
             times = []
-            for i, item in enumerate(products):
+            for i, item in enumerate(products['products']):
                 start_time = perf_counter()
                 item_data = {}
 
@@ -219,10 +219,11 @@ class CatalogParser:
                 times.append(perf_counter() - start_time)
 
             page += 1
-            print('среднее время на элемент: {}с'.format(sum(times) / len(times)))
+
             print(
                 'прогресс: {}/{} ({:.2f}%)'.format(len(parsed_data), products['total'],
                                                    len(parsed_data) / products['total'] * 100))
+            print('среднее время на элемент: {:.2f}с'.format(sum(times) / len(times)))
 
             if len(parsed_data) == 100:
                 return parsed_data
@@ -230,6 +231,11 @@ class CatalogParser:
             sleep(random.uniform(0.5, 2.0))
 
     def __get_price(self, catalog_item: dict):
+        """
+        Логика извлечения цены товара
+        :param catalog_item:
+        :return:
+        """
         price = catalog_item.get('sizes')
         price = price[0] if price else dict()
         price = price.get('price', dict())
@@ -239,12 +245,22 @@ class CatalogParser:
         return price
 
     def __get_sizes(self, catalog_item: dict):
+        """
+        Логика извлечения доступных размеров
+        :param catalog_item:
+        :return:
+        """
         sizes = catalog_item.get('sizes', dict(name=self.empty_item_placeholder))
         sizes = ', '.join(size_item['name'] for size_item in sizes)
 
         return sizes
 
     def __get_seller_link(self, catalog_item: dict):
+        """
+        Логика генерации ссылки на продавца
+        :param catalog_item:
+        :return:
+        """
         link_form = 'https://www.wildberries.ru/seller/{}'
         seller_id = catalog_item.get('supplierId')
 
