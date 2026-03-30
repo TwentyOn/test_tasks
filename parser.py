@@ -12,7 +12,6 @@ import requests
 from xlsx_formatter import XLSXFormatter
 from get_cookie import get_cookie_string
 
-
 logging.basicConfig(level=logging.INFO, format='[{asctime}] #{levelname:4} {name}:{lineno} - {message}', style='{')
 logger = logging.getLogger(__name__)
 
@@ -32,7 +31,12 @@ class CardParser:
             'sec-ch-ua-platform': "Windows"
         }
 
-    async def card_parse(self, article_id) -> dict:
+    async def card_parse(self, article_id: int) -> dict[str, str]:
+        """
+        Метод для извлечения детальных данных о товаре
+        :param article_id: артикль товара
+        :return: словарь с данными
+        """
         result = {}
         bucket_id, card_json = await self.get_card_json(article_id)
 
@@ -52,7 +56,12 @@ class CardParser:
 
         return result
 
-    async def get_card_json(self, article_id, retry=3):
+    async def get_card_json(self, article_id: int) -> tuple[int | None, dict]:
+        """
+        Метод для получения деталей о товаре
+        :param article_id: артикль товара
+        :return: кортеж bucket_id, словарь с данными
+        """
         vol = article_id // 100000
         part = article_id // 1000
 
@@ -61,7 +70,12 @@ class CardParser:
 
         return bucket_id, card_json
 
-    async def find_media_url(self, urls):
+    async def find_media_url(self, urls) -> tuple[int | None, dict]:
+        """
+        Метод для поиска корректной ссылки на товар (card.json)
+        :param urls: список ссылок которые нужно проверить
+        :return: кортеж из корректного bucket_id и тела ответа с деталями о товаре
+        """
         async with aiohttp.ClientSession() as session:
             semaphore = asyncio.Semaphore(10)
 
@@ -94,7 +108,14 @@ class CardParser:
             return None, dict()
 
     @staticmethod
-    def get_image_links(bucket_id, article_id, count):
+    def get_image_links(bucket_id: int | str, article_id: int, count: int) -> str:
+        """
+        Метод для генерации ссылок на медиа-файлы
+        :param bucket_id: id хранилища WB
+        :param article_id: артикль товара
+        :param count: кол-во картинок
+        :return: ссылки через запятую
+        """
         if not bucket_id:
             return 'не удалось извлечь ссылки'
 
@@ -139,7 +160,13 @@ class CatalogParser:
 
         self.empty_item_placeholder = 'не найдено'
 
-    async def parse_catalog(self, query, page=1):
+    async def parse_catalog(self, query: str, page: int = 1) -> list[dict]:
+        """
+        Парсинг каталога товаров
+        :param query: тело поискового запроса
+        :param page: страница, с которой начнется парсинг
+        :return: список с данными
+        """
         parsed_data = []
         encoded_query = urllib.parse.quote(query)
 
@@ -156,9 +183,9 @@ class CatalogParser:
         while True:
             page_url = self.api_url_form.format(page, encoded_query)
             response = requests.get(page_url, headers=self.api_headers)
-            products = response.json()
+            products = response.json().get(['products'], [])
             times = []
-            for i, item in enumerate(products['products']):
+            for i, item in enumerate(products):
                 start_time = perf_counter()
                 item_data = {}
 
@@ -202,7 +229,7 @@ class CatalogParser:
 
             sleep(random.uniform(0.5, 2.0))
 
-    def __get_price(self, catalog_item):
+    def __get_price(self, catalog_item: dict):
         price = catalog_item.get('sizes')
         price = price[0] if price else dict()
         price = price.get('price', dict())
@@ -211,13 +238,13 @@ class CatalogParser:
 
         return price
 
-    def __get_sizes(self, catalog_item):
+    def __get_sizes(self, catalog_item: dict):
         sizes = catalog_item.get('sizes', dict(name=self.empty_item_placeholder))
         sizes = ', '.join(size_item['name'] for size_item in sizes)
 
         return sizes
 
-    def __get_seller_link(self, catalog_item):
+    def __get_seller_link(self, catalog_item: dict):
         link_form = 'https://www.wildberries.ru/seller/{}'
         seller_id = catalog_item.get('supplierId')
 
@@ -227,25 +254,14 @@ class CatalogParser:
         return self.empty_item_placeholder
 
 
-def get_image_links(bucket_id, article_id, count):
-    url_form = 'https://basket-{:02d}.wbbasket.ru/vol{}/part{}/{}/images/big/{}.webp'
-    vol = article_id // 100000
-    part = article_id // 1000
-    result = []
-    for i in range(1, count + 1):
-        result.append(url_form.format(bucket_id, vol, part, article_id, i))
-
-    return ', '.join(result)
-
-
-async def main(query):
+async def main(query: str):
     card_parser = CardParser()
     xlsx_fmt = XLSXFormatter()
 
     pars = CatalogParser(card_parser)
     data = await pars.parse_catalog(query)
 
-    xlsx_fmt.generate_file(data, 'aboba')
+    xlsx_fmt.generate_file(data)
 
 
 if __name__ == '__main__':
