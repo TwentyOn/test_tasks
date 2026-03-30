@@ -1,6 +1,8 @@
 import os
 import csv
 
+from models import MedianCoffeeRecord
+
 
 class CSVReader:
     def _validate_path(self, filepath: str):
@@ -13,11 +15,11 @@ class CSVReader:
     def can_read(filepath: str) -> bool:
         return filepath.endswith('.csv')
 
-    def read(self, filepath: str) -> list[dict]:
+    def read(self, filepath: str) -> list[MedianCoffeeRecord]:
         self._validate_path(filepath)
 
         result = []
         with open(filepath, 'r', encoding='utf-8') as csv_file:
             for line in csv.DictReader(csv_file):
-                result.append(line)
+                result.append(MedianCoffeeRecord.from_dict(line))
         return result
