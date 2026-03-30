@@ -8,7 +8,7 @@
 ```commandline
 ├───docs
 │
-├───output
+├───output                  # пример выходных файлов
 │ 
 ├───parsers
 │       card_parser.py      # парсер деталей о товаре
