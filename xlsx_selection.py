@@ -3,6 +3,11 @@ import os
 
 
 def filter_xlsx(filename: str):
+    """
+    Логика выборки данных
+    :param filename:
+    :return:
+    """
     if not os.path.exists(filename):
         print(f'фильтрация не удалась: {filename} не найден')
 
@@ -13,7 +18,9 @@ def filter_xlsx(filename: str):
             (df['цена'] <= 10000)
     )
 
-    f = df[filter_condition]
+    filtered_pd = df[filter_condition]
 
-    f['артикул'] = f['артикул'].astype(str)
-    f.to_excel(f'selection_{filename}', index=False, engine_kwargs={'options': {'strings_to_urls': False}})
+    filtered_pd['артикул'] = filtered_pd['артикул'].astype(str)
+    filtered_pd = filtered_pd.sort_values(['кол-во отзывов', 'рейтинг'], ascending=False)
+
+    filtered_pd.to_excel(f'selection_{filename}', index=False, engine_kwargs={'options': {'strings_to_urls': False}})
