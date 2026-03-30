@@ -1,7 +1,10 @@
 import logging
 from datetime import date
+from dataclasses import asdict
 
 import xlsxwriter
+
+from models import Product
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +26,7 @@ class XLSXFormatter:
 
         return spec_contet
 
-    def generate_file(self, data: list[dict], name: str = 'parsed_data.xlsx'):
+    def generate_file(self, data: list[Product], name: str = 'parsed_data.xlsx'):
         logger.info('формирование xlsx-файла...')
 
         if not name.endswith('.xlsx'):
@@ -40,7 +43,9 @@ class XLSXFormatter:
         ]
         self.__write_header(sheet, headers)
 
-        for i, item in enumerate(data, start=1):
+        products = [asdict(p) for p in data]
+
+        for i, item in enumerate(products, start=1):
             for j, k in enumerate(item):
                 val = item[k]
                 sheet.write_string(i, j, str(val))

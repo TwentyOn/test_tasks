@@ -1,15 +1,15 @@
 import random
 import statistics
 import urllib.parse
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urljoin
 from time import sleep, perf_counter
 import logging
 
 import requests
-import pandas as pd
 
 from utils.get_cookie import get_cookie_string
 from parsers.card_parser import CardParser
+from models import Product
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class CatalogParser:
 
         self.empty_item_placeholder = 'не найдено'
 
-    async def parse_catalog(self, query: str, page: int = 1) -> list[dict]:
+    async def parse_catalog(self, query: str, page: int = 1) -> list[Product]:
         """
         Парсинг каталога товаров
         :param query: тело поискового запроса
@@ -75,28 +75,27 @@ class CatalogParser:
                 start_time = perf_counter()
 
                 article_id = item['id']
-                logger.debug('парсинг: https://www.wildberries.ru/catalog/{}/detail.aspx {}/100'.format(article_id, i + 1))
+                logger.debug(
+                    'парсинг: https://www.wildberries.ru/catalog/{}/detail.aspx {}/100'.format(article_id, i + 1))
 
                 card_data = await self.card_parser.card_parse(article_id)
+                product = Product(
+                    card_link='https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id),
+                    article=article_id,
+                    name=item.get('name', self.empty_item_placeholder),
+                    price=self.__get_price(item),
+                    description=card_data.get('description', self.empty_item_placeholder),
+                    image_links=card_data.get('image_links', self.empty_item_placeholder),
+                    specifications=card_data.get('specifications', self.empty_item_placeholder),
+                    seller_name=item.get('supplier', self.empty_item_placeholder),
+                    seller_link=self.__get_seller_link(item),
+                    sizes=self.__get_sizes(item),
+                    quantity=item.get('totalQuantity', self.empty_item_placeholder),
+                    rating=item.get('nmReviewRating', self.empty_item_placeholder),
+                    rating_count=item.get('feedbacks', self.empty_item_placeholder)
+                )
 
-                item_data = {
-                    'card_link': 'https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id),
-                    'article': article_id,
-                    'name': item.get('name', self.empty_item_placeholder),
-                    'price': self.__get_price(item),
-                    'description': card_data.get('description', self.empty_item_placeholder),
-                    'image_links': card_data.get('image_links', self.empty_item_placeholder),
-                    'specifications': card_data.get('specifications', self.empty_item_placeholder),
-                    'seller_name': item.get('supplier', self.empty_item_placeholder),
-                    'seller_link': self.__get_seller_link(item),
-                    'sizes': self.__get_sizes(item),
-                    'quantity': item.get('totalQuantity', self.empty_item_placeholder),
-                    'rating': item.get('nmReviewRating', self.empty_item_placeholder),
-                    'rating_count': item.get('feedbacks', self.empty_item_placeholder)
-
-                }
-
-                parsed_data.append(item_data)
+                parsed_data.append(product)
                 logger.debug('время: {:.2f}с'.format(perf_counter() - start_time))
                 times.append(perf_counter() - start_time)
 
@@ -107,9 +106,11 @@ class CatalogParser:
 
             logger.info('среднее время на элемент: {:.2f}с'.format(statistics.mean(times)))
 
-            if len(parsed_data) >= products['total']:
-                return parsed_data
+            # if len(parsed_data) >= products['total']:
+            #     return parsed_data
 
+            if len(parsed_data) >= 100:
+                return parsed_data
 
             sleep(random.uniform(0.5, 2.0))
 
