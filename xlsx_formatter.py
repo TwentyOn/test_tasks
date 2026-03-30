@@ -1,4 +1,8 @@
+import logging
+
 import xlsxwriter
+
+logger = logging.getLogger(__name__)
 
 class XLSXFormatter:
     def __init__(self):
@@ -18,7 +22,13 @@ class XLSXFormatter:
 
         return spec_contet
 
-    def generate_file(self, data: list[dict]):
+    def generate_file(self, data: list[dict], name='parsed_data.xlsx'):
+        logger.info('формирование xlsx-файла...')
+
+        if not name.endswith('.xlsx'):
+            logger.error('некорректное имя файла в параметре name')
+            return
+
         headers = [
             'ссылка на товар', 'артикул', "название", "цена", "описание", "ссылки на изображения",
             "характеристики", "продавец", "ссылка на продавца", "размеры", "остатки", "рейтинг", "кол-во отзывов"
