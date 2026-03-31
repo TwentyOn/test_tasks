@@ -73,8 +73,7 @@ class CatalogParser:
             page += 1
             logger.info('прогресс: {}/{} ({:.2f}%)'.format(len(parsed_data), products['total'],
                                                            len(parsed_data) / products['total'] * 100))
-
-            if len(parsed_data) >= 100:
+            if len(parsed_data) >= products['total']:
                 return parsed_data
 
             sleep(random.uniform(0.5, 2.0))
