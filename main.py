@@ -3,7 +3,7 @@ from time import perf_counter
 import logging
 
 from parsers.catalog_parser import CatalogParser
-from parsers.url_parser import CardParser
+from parsers.card_parser import CardParser
 from xlsx_processing.xlsx_formatter import XLSXFormatter
 from xlsx_processing.xlsx_selection import filter_xlsx
 
