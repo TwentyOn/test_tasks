@@ -29,7 +29,6 @@ class CatalogParser:
             'accept-language': 'ru,en;q=0.9',
             'deviceid': 'site_aa794f41ab3441ed8c0f2471f2d477cd',
             'priority': 'u=1, i',
-            'referer': 'https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BF%D0%B0%D0%BB%D1%8C%D1%82%D0%BE%20%D0%B8%D0%B7%20%D0%BD%D0%B0%D1%82%D1%83%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%B9%20%D1%88%D0%B5%D1%80%D1%81%D1%82%D0%B8',
             'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "YaBrowser";v="26.3", "Yowser";v="2.5"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
@@ -54,9 +53,7 @@ class CatalogParser:
         """
         parsed_data = []
         encoded_query = urllib.parse.quote(query)
-
         cookie_url = urljoin(self.api_url_form, '/')
-        print(cookie_url)
         cookie = get_cookie_string(cookie_url)
 
         self.api_headers['cookie'] = cookie
@@ -70,47 +67,59 @@ class CatalogParser:
             page_url = self.api_url_form.format(page, encoded_query)
             response = requests.get(page_url, headers=self.api_headers)
             products = response.json()
-            times = []
-            for i, item in enumerate(products['products']):
-                start_time = perf_counter()
 
-                article_id = item['id']
-                logger.debug(
-                    'парсинг: https://www.wildberries.ru/catalog/{}/detail.aspx {}/100'.format(article_id, i + 1))
-
-                card_data = await self.card_parser.card_parse(article_id)
-                product = Product(
-                    card_link='https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id),
-                    article=article_id,
-                    name=item.get('name', self.empty_item_placeholder),
-                    price=self.__get_price(item),
-                    description=card_data.get('description', self.empty_item_placeholder),
-                    image_links=card_data.get('image_links', self.empty_item_placeholder),
-                    specifications=card_data.get('specifications', self.empty_item_placeholder),
-                    seller_name=item.get('supplier', self.empty_item_placeholder),
-                    seller_link=self.__get_seller_link(item),
-                    sizes=self.__get_sizes(item),
-                    quantity=item.get('totalQuantity', self.empty_item_placeholder),
-                    rating=item.get('nmReviewRating', self.empty_item_placeholder),
-                    rating_count=item.get('feedbacks', self.empty_item_placeholder)
-                )
-
-                elapsed = perf_counter() - start_time
-                parsed_data.append(product)
-                logger.debug('время: {:.2f}с'.format(elapsed))
-                times.append(elapsed)
+            parsed_data.extend(await self._parse_products(products))
 
             page += 1
-
             logger.info('прогресс: {}/{} ({:.2f}%)'.format(len(parsed_data), products['total'],
                                                            len(parsed_data) / products['total'] * 100))
 
-            logger.info('среднее время на элемент: {:.2f}с'.format(statistics.mean(times)))
-
-            if len(parsed_data) >= products['total']:
+            if len(parsed_data) >= 100:
                 return parsed_data
 
             sleep(random.uniform(0.5, 2.0))
+
+    async def _parse_products(self, products: dict):
+        """
+        Логика парсинга очередной страницы каталога
+        :param products: элементы каталога
+        :return:
+        """
+        data = []
+        times = []
+
+        for i, item in enumerate(products['products']):
+            start_time = perf_counter()
+
+            article_id = item['id']
+            logger.debug(
+                'парсинг: https://www.wildberries.ru/catalog/{}/detail.aspx {}/100'.format(article_id, i + 1))
+
+            card_data = await self.card_parser.card_parse(article_id)
+            parsed_product = Product(
+                card_link='https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id),
+                article=article_id,
+                name=item.get('name', self.empty_item_placeholder),
+                price=self.__get_price(item),
+                description=card_data.get('description', self.empty_item_placeholder),
+                image_links=card_data.get('image_links', self.empty_item_placeholder),
+                specifications=card_data.get('specifications', self.empty_item_placeholder),
+                seller_name=item.get('supplier', self.empty_item_placeholder),
+                seller_link=self.__get_seller_link(item),
+                sizes=self.__get_sizes(item),
+                quantity=item.get('totalQuantity', self.empty_item_placeholder),
+                rating=item.get('nmReviewRating', self.empty_item_placeholder),
+                rating_count=item.get('feedbacks', self.empty_item_placeholder)
+            )
+            data.append(parsed_product)
+
+            elapsed = perf_counter() - start_time
+            logger.debug('время: {:.2f}с'.format(elapsed))
+
+            times.append(elapsed)
+
+        logger.info('среднее время на элемент: {:.2f}с'.format(statistics.mean(times)))
+        return data
 
     def __get_price(self, catalog_item: dict):
         """

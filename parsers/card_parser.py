@@ -14,12 +14,13 @@ class CardParser:
     def __init__(self):
         self.api_url_form = 'https://basket-{:02d}.wbbasket.ru/vol{}/part{}/{}/info/ru/card.json'
         self.headers = {
-            'refer': 'https://www.wildberries.ru/catalog/874597327/detail.aspx?size=1317986564',
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'sec-ch-ua': 'Not(A:Brand";v="8", "Chromium";v="144", "YaBrowser";v="26.3", "Yowser";v="2.5',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': "Windows"
         }
+
+        self.empy_placeholder = 'не найдено'
 
     async def card_parse(self, article_id: int) -> dict[str, str]:
         """
@@ -27,24 +28,20 @@ class CardParser:
         :param article_id: артикль товара
         :return: словарь с данными
         """
-        result = {}
+        self.headers['refer'] = 'https://www.wildberries.ru/catalog/{}/detail.aspx'.format(article_id)
         bucket_id, card_json = await self.get_card_json(article_id)
-
-        description = card_json.get('description', 'описание не указано')
 
         options = card_json.get('options', [])
         specifications = map(lambda op_item: (op_item['name'], op_item['value']), options)
         specifications = map(lambda op_item: ': '.join(op_item), specifications)
-        specifications = '\n'.join(specifications) if specifications else 'характеристики не найдены'
 
         image_count = card_json.get('media', dict()).get('photo_count', 0)
-        image_links = self.get_image_links(bucket_id, article_id, image_count)
 
-        result['description'] = description
-        result['image_links'] = image_links
-        result['specifications'] = specifications
-
-        return result
+        return {
+            'description': card_json.get('description', self.empy_placeholder),
+            'image_links': self.get_image_links(bucket_id, article_id, image_count),
+            'specifications': '\n'.join(specifications) if options else self.empy_placeholder
+        }
 
     async def get_card_json(self, article_id: int) -> tuple[int | None, dict]:
         """
