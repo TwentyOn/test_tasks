@@ -1,6 +1,5 @@
 import logging
 from datetime import date
-from dataclasses import asdict
 
 import xlsxwriter
 
@@ -43,7 +42,7 @@ class XLSXFormatter:
         ]
         self.__write_header(sheet, headers)
 
-        products = [asdict(p) for p in data]
+        products = [p.to_dict() for p in data]
 
         for i, item in enumerate(products, start=1):
             for j, k in enumerate(item):

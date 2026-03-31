@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 
 @dataclass
@@ -16,3 +16,6 @@ class Product:
     quantity: int | str
     rating: float | str
     rating_count: int | str
+
+    def to_dict(self):
+        return asdict(self)
