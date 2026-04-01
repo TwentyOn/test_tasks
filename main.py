@@ -21,22 +21,26 @@ class TableMonitor:
         cv2.destroyWindow('get insterest table')
         return roi
 
-    def table_occupied(self, detections):
+    def table_occupied(self, detections: list[int]) -> bool:
+        """
+        Проверяет наличие людей в зоне столика
+        :param detections: bounding box человека
+        :return: true - есть людди / false - нет людей
+        """
         x1_1, y1_1, x2_1, y2_1 = self.roi
         x2_1 += x1_1
         y2_1 += y1_1
-        table_area = x2_1 * y2_1
 
         for det in detections:
             # Координаты bounding box человека
             x1_2, y1_2, x2_2, y2_2 = det
-            person_area = (x2_2 - x1_2) * (y2_2 - y1_2)
+            cx, cy = (x1_2 + x2_2) / 2, (y1_2 + y2_2) / 2
 
             # Вычисляем пересечение с зоной столика
-            if x2_1 < x1_2 or x2_2 < x1_1 or y2_1 < y1_2 or y2_2 < y1_1:
-                continue
-            else:
+            if x1_1 <= cx <= x1_1 + x2_1 and y1_1 <= cy <= y1_1 + y2_1:
                 return True
+            else:
+                continue
 
         return False
 
