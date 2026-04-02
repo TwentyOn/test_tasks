@@ -245,6 +245,10 @@ class TableMonitor:
 
             key = cv2.waitKey(30) & 0xFF
             if key == ord('q'):
+                avg_delay = self.event_recorder.calc_avg_empty()
+                print(f'всего событий зарегистировано: {len(self.event_recorder.events_df)}')
+                print(f'среднее время пребывания столика пустым: {avg_delay}c')
+
                 self.cap.release()
                 self.video_writer.release()
                 cv2.destroyAllWindows()
@@ -254,7 +258,7 @@ class TableMonitor:
 def main():
     # объект для записи выходного видеофайла
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video_writer = cv2.VideoWriter('test.mp4', fourcc, 15.0, (1920, 1080))
+    video_writer = cv2.VideoWriter('output.mp4', fourcc, 15.0, (1920, 1080))
 
     # объект для записи событий
     recorder = EventRecorder()
