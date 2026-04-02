@@ -13,6 +13,9 @@ logging.basicConfig(level=logging.INFO, format='[{asctime}] #{levelname:4} {name
 logger = logging.getLogger(__name__)
 
 
+SCREEN_WIDTH, SCREEN_HEIGHT = tkinter.Tk().winfo_screenwidth(), tkinter.Tk().winfo_height()
+
+
 class EventRecorder:
     """
     Запись событий и рачет средней задержки
@@ -253,9 +256,8 @@ class TableMonitor:
                 self.video_writer.write(frame)
 
             if not self.headless:
-                sc_width, sc_high = tkinter.Tk().winfo_screenwidth(), tkinter.Tk().winfo_height()
                 cv2.imshow('monitor', frame)
-                cv2.resizeWindow('monitor', sc_width, sc_high)
+                cv2.resizeWindow('monitor', SCREEN_WIDTH, SCREEN_HEIGHT)
 
             key = cv2.waitKey(30) & 0xFF
             if key == ord('q'):
@@ -301,7 +303,7 @@ def main():
 
     # объект для записи выходного видеофайла
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video_writer = cv2.VideoWriter('output.mp4', fourcc, 15.0, (1920, 1080))
+    video_writer = cv2.VideoWriter('output.mp4', fourcc, 15.0, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
     # объект для записи событий
     recorder = EventRecorder()
