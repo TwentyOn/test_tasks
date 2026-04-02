@@ -26,11 +26,6 @@ class EventRecorder:
     def __init__(self):
         self.events_df = pd.DataFrame(columns=['event', 'timestamp'])
 
-        self.event = {
-            'EMPTY': 'столик освободился',
-            'OCCUPIED': 'столик занят'
-        }
-
     def log_event(self, event: str):
         """
         Записать событие в датафрейм
@@ -43,7 +38,7 @@ class EventRecorder:
             'event': event,
             'timestamp': ts
         }
-        logger.debug(f'зафиксировано событие: {event}')
+        logger.debug(f'зафиксировано событие: [{time.ctime(ts)}] {event}')
         self.calc_avg_empty()
 
     def calc_avg_empty(self):
@@ -53,13 +48,14 @@ class EventRecorder:
         """
         result = []
 
-        empty_ev_df = self.events_df[self.events_df['event'] == self.event['EMPTY']]
+        empty_ev_df = self.events_df[self.events_df['event'] == 'столик освободился']
 
         for i in empty_ev_df.index.tolist():
             start_time = empty_ev_df.loc[i, 'timestamp']
 
             occupied_ev_df = self.events_df.loc[i + 1:]
-            occupied_ev_df = occupied_ev_df[occupied_ev_df['event'] == self.event['OCCUPIED']]
+            occupied_ev_df = occupied_ev_df[occupied_ev_df['event'] == 'столик занят']
+
             if not occupied_ev_df.empty:
                 end_time = occupied_ev_df.iloc[0]['timestamp']
                 result.append(end_time - start_time)
@@ -95,12 +91,12 @@ class TableMonitor:
         self.fps = int(self.cap.get(cv2.CAP_PROP_FPS))
 
         # время на смену состояния
-        self.DEBOUNCE_SEC = 3.0
+        self.debounce_sec = 3.0
 
-        self.window: deque[int] = deque(maxlen=self.fps * int(self.DEBOUNCE_SEC))
+        self.window: deque[int] = deque(maxlen=self.fps * int(self.debounce_sec))
 
         # уровень уверенности модели
-        self.CONF_THRESHOLD = 0.4
+        self.conf_threshold = 0.4
 
         # начальное состояние
         self.state = 'EMPTY'
@@ -128,6 +124,22 @@ class TableMonitor:
         cv2.destroyWindow('get insterest table')
         return x, y, w, h
 
+    def detect_pople(self, frame):
+        detections = []
+
+        result = self.model(frame, conf=self.conf_threshold, verbose=False)[0]
+        boxes = result.boxes
+
+        # находим координаты bounding box только для людей
+        for box in boxes:
+            x1, y1, x2, y2 = box.xyxy[0].tolist()
+            cls = int(box.cls[0])
+
+            if cls == 0:
+                detections.append([x1, y1, x2, y2])
+
+        return detections
+
     def table_occupied(self, detections: list[list[int]]) -> bool:
         """
         Проверяет наличие людей в зоне столика
@@ -152,21 +164,25 @@ class TableMonitor:
 
         return False
 
-    def detect_pople(self, frame):
-        detections = []
-
-        result = self.model(frame, conf=self.CONF_THRESHOLD, verbose=False)[0]
-        boxes = result.boxes
-
-        # находим координаты bounding box только для людей
-        for box in boxes:
-            x1, y1, x2, y2 = box.xyxy[0].tolist()
-            cls = int(box.cls[0])
-
-            if cls == 0:
-                detections.append([x1, y1, x2, y2])
-
-        return detections
+    def state_machine(self) -> None:
+        """
+        Модель конечного автомата для изменения состояний
+        :return:
+        """
+        if sum(self.window):
+            if self.state == 'EMPTY':
+                self.event_recorder.log_event('человек у столика')
+                self.state = 'APPROACH'
+            elif self.state == 'APPROACH':
+                if sum(self.window) >= self.fps * self.debounce_sec:
+                    self.event_recorder.log_event('столик занят')
+                    self.state = 'OCCUPIED'
+        else:
+            if self.state == 'APPROACH':
+                self.state = 'EMPTY'
+            elif self.state == 'OCCUPIED':
+                self.event_recorder.log_event('столик освободился')
+                self.state = 'EMPTY'
 
     def draw_overlay(self, frame) -> None:
         """
@@ -198,26 +214,6 @@ class TableMonitor:
             1
         )
 
-    def state_machine(self) -> None:
-        """
-        Модель конечного автомата для изменения состояний
-        :return:
-        """
-        if sum(self.window):
-            if self.state == 'EMPTY':
-                self.event_recorder.log_event('человек у столика')
-                self.state = 'APPROACH'
-            elif self.state == 'APPROACH':
-                if sum(self.window) == self.fps * self.DEBOUNCE_SEC:
-                    self.event_recorder.log_event('столик занят')
-                    self.state = 'OCCUPIED'
-        else:
-            if self.state == 'APPROACH':
-                self.state = 'EMPTY'
-            elif self.state == 'OCCUPIED':
-                self.event_recorder.log_event('столик освободился')
-                self.state = 'EMPTY'
-
     def run(self):
         """
         Главный цикл обработки
@@ -238,7 +234,7 @@ class TableMonitor:
 
                 avg_delay = self.event_recorder.calc_avg_empty()
                 logger.info(f'всего событий зарегистировано: {len(self.event_recorder.events_df)}')
-                logger.info(f'cреднее время между уходом гостя и подходом следующего человека: {avg_delay}c')
+                logger.info(f'cреднее время между уходом гостя и подходом следующего: {avg_delay:.2f}c')
 
                 cv2.destroyAllWindows()
                 self.video_writer.release()
@@ -248,7 +244,7 @@ class TableMonitor:
             detections = self.detect_pople(frame)
             has_people = self.table_occupied(detections)
             self.window.append(has_people)
-            self.state_machine(has_people)
+            self.state_machine()
 
             # if detections:
             #     for item in detections:
@@ -268,7 +264,7 @@ class TableMonitor:
             if key == ord('q'):
                 avg_delay = self.event_recorder.calc_avg_empty()
                 logger.info(f'всего событий зарегистировано: {len(self.event_recorder.events_df)}')
-                logger.info(f'cреднее время между уходом гостя и подходом следующего человека: {avg_delay}c')
+                logger.info(f'cреднее время между уходом гостя и подходом следующего человека: {avg_delay:.2f}c')
 
                 self.cap.release()
                 self.video_writer.release()
