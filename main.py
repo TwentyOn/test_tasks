@@ -2,11 +2,15 @@ import os.path
 import time
 import argparse
 import tkinter
+import logging
 
 import cv2
 import numpy as np
 from ultralytics import YOLO
 import pandas as pd
+
+logging.basicConfig(level=logging.INFO, format='[{asctime}] #{levelname:4} {name}:{lineno} - {message}', style='{')
+logger = logging.getLogger(__name__)
 
 
 class EventRecorder:
@@ -34,6 +38,7 @@ class EventRecorder:
             'event': event,
             'timestamp': ts
         }
+        logger.info(f'зафиксировано событие: {event}')
 
     def calc_avg_empty(self):
         """
