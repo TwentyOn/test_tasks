@@ -219,7 +219,7 @@ class TableMonitor:
 
                 avg_delay = self.event_recorder.calc_avg_empty()
                 print(f'всего событий зарегистировано: {len(self.event_recorder.events_df)}')
-                print(f'среднее время пребывания столика пустым: {avg_delay}c')
+                print(f'cреднее время между уходом гостя и подходом следующего человека: {avg_delay}c')
 
                 cv2.destroyAllWindows()
                 self.video_writer.release()
@@ -247,7 +247,7 @@ class TableMonitor:
             if key == ord('q'):
                 avg_delay = self.event_recorder.calc_avg_empty()
                 print(f'всего событий зарегистировано: {len(self.event_recorder.events_df)}')
-                print(f'среднее время пребывания столика пустым: {avg_delay}c')
+                print(f'cреднее время между уходом гостя и подходом следующего человека: {avg_delay}c')
 
                 self.cap.release()
                 self.video_writer.release()
