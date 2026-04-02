@@ -4,6 +4,7 @@
 ## Общая информация
 - видео: "видео 2.mp4"
 - столик: [представлен в разделе проблемного кадра](#проблемный-кадр)
+- выходное видео: [output.mp4](https://drive.google.com/file/d/1WLjkA4gNsZSYqNv74ukBTH1DF3oZlOxB/view?usp=drive_link)
 
 Вся основная логика реализуется в классе TableMonitor.
 Основные параметры:
