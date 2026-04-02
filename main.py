@@ -1,31 +1,88 @@
 import time
 
 import cv2
+import numpy as np
 from ultralytics import YOLO
+import pandas as pd
 
-LOG_FILE = "table_events.log"
 
+class EventRecorder:
+    """
+    Запись событий и рачет средней задержки
+    """
 
-def log_event(event: str):
-    ts = time.strftime("%Y-%m-%d %H:%M:%S")
-    line = f"[{ts}] {event}"
-    print(line)
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(line + "\n")
+    def __init__(self):
+        self.events_df = pd.DataFrame(columns=['event', 'timestamp'])
+
+        self.event = {
+            'EMPTY': 'столик освободился',
+            'OCCUPIED': 'столик занят'
+        }
+
+    def log_event(self, event: str):
+        """
+        Записать событие в датафрейм
+        :param event:
+        :return:
+        """
+        ts = time.time()
+        cur_index = len(self.events_df)
+        self.events_df.loc[cur_index] = {
+            'event': event,
+            'timestamp': ts
+        }
+
+    def calc_avg_empty(self):
+        """
+        Расчет средней задержки
+        :return:
+        """
+        result = []
+
+        empty_ev_df = self.events_df[self.events_df['event'] == self.event['EMPTY']]
+
+        for i in empty_ev_df.index.tolist():
+            start_time = empty_ev_df.loc[i, 'timestamp']
+
+            occupied_ev_df = self.events_df.loc[i:+1:]
+            occupied_ev_df = occupied_ev_df[occupied_ev_df['event'] == self.event['OCCUPIED']]
+            if not occupied_ev_df.empty:
+                end_time = occupied_ev_df.iloc[0]['timestamp']
+                result.append(end_time - start_time)
+
+        if result:
+            return np.array(result).mean()
+
+    def write_to_csv(self):
+        """
+        Вывод всех событий в файл
+        :return:
+        """
+        self.events_df.to_csv('logs.csv')
 
 
 class TableMonitor:
-    def __init__(self):
+    def __init__(self, video_writer, event_recorder: EventRecorder):
+
         self.cap = cv2.VideoCapture('видео 2.mp4')
         self.model = YOLO('yolov8n.pt')
+        self.event_recorder = event_recorder
+        self.video_writer = video_writer
+
+        # выбранная зона интереса
         self.roi = None
+
+        # время на смену состояния
         self.DEBOUNCE_SEC = 5.0
-        self.SMOOTHING_FRAMES = 10
+
+        # уровень уверенности модели
         self.CONF_THRESHOLD = 0.4
+
+        # начальное состояние
         self.state = 'EMPTY'
-        self.last_time = 0.0
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        self.video_writer = cv2.VideoWriter('test.mp4', fourcc, 15.0, (1920, 1080))
+
+        # время иземениния состояния
+        self.change_time = 0.0
 
     def get_roi_area(self) -> tuple[int]:
         """
@@ -128,12 +185,12 @@ class TableMonitor:
         """
         if has_people:
             if self.state == 'EMPTY':
-                log_event('кто-то подошел к столику')
+                self.event_recorder.log_event('человек у столика')
                 self.last_time = time.time()
                 self.state = 'APPROACH'
             elif self.state == 'APPROACH':
                 if time.time() - self.last_time >= self.DEBOUNCE_SEC:
-                    log_event('столик заняли')
+                    self.event_recorder.log_event('столик занят')
                     self.last_time = 0.0
                     self.state = 'OCCUPIED'
             else:
@@ -143,13 +200,13 @@ class TableMonitor:
                 if self.last_time == 0.0:
                     self.last_time = time.time()
                 elif time.time() - self.last_time >= self.DEBOUNCE_SEC:
-                    log_event('столик освободился')
+                    self.event_recorder.log_event('столик освободился')
                     self.state = 'EMPTY'
                     self.last_time = 0.0
 
     def run(self):
         """
-        Главный цикл
+        Главный цикл обработки
         :return:
         """
         self.roi = self.get_roi_area()
@@ -158,6 +215,15 @@ class TableMonitor:
             ret, frame = self.cap.read()
 
             if not ret:
+                self.event_recorder.write_to_csv()
+
+                avg_delay = self.event_recorder.calc_avg_empty()
+                print(f'всего событий зарегистировано: {len(self.event_recorder.events_df)}')
+                print(f'среднее время пребывания столика пустым: {avg_delay}c')
+
+                cv2.destroyAllWindows()
+                self.video_writer.release()
+
                 break
 
             detections = self.detect_pople(frame)
@@ -175,7 +241,7 @@ class TableMonitor:
                 self.video_writer.write(frame)
 
             cv2.imshow('monitor', frame)
-            cv2.resizeWindow('monitor', 1440, 900)
+            cv2.resizeWindow('monitor', 1920, 1080)
 
             key = cv2.waitKey(30) & 0xFF
             if key == ord('q'):
@@ -185,5 +251,18 @@ class TableMonitor:
                 break
 
 
-monitor = TableMonitor()
-monitor.run()
+def main():
+    # объект для записи выходного видеофайла
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video_writer = cv2.VideoWriter('test.mp4', fourcc, 15.0, (1920, 1080))
+
+    # объект для записи событий
+    recorder = EventRecorder()
+
+    # основная программа для детекции движения
+    monitor = TableMonitor(video_writer, recorder)
+    monitor.run()
+
+
+if __name__ == '__main__':
+    main()
