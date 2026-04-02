@@ -6,5 +6,8 @@ __pycache__/
 # медиа
 *.mp4
 
+# логи
+*log.csv
+
 # модель
 yolov8n.pt
