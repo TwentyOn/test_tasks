@@ -3,17 +3,18 @@ import time
 import argparse
 import tkinter
 import logging
+from distutils.util import strtobool
 
 import cv2
 import numpy as np
 from ultralytics import YOLO
 import pandas as pd
 
-logging.basicConfig(level=logging.INFO, format='[{asctime}] #{levelname:4} {name}:{lineno} - {message}', style='{')
+logging.basicConfig(level=logging.INFO, format='[{asctime}] #{levelname:4} - {message}', style='{')
 logger = logging.getLogger(__name__)
 
 
-SCREEN_WIDTH, SCREEN_HEIGHT = tkinter.Tk().winfo_screenwidth(), tkinter.Tk().winfo_height()
+SCREEN_WIDTH, SCREEN_HEIGHT = tkinter.Tk().winfo_screenwidth(), tkinter.Tk().winfo_screenheight()
 
 
 class EventRecorder:
@@ -76,15 +77,16 @@ class TableMonitor:
     """
     Мониторинг зоны интереса на видео
     """
-    def __init__(self, filename: str, video_writer, event_recorder: EventRecorder, headless: bool):
+    def __init__(self, filename: str, event_recorder: EventRecorder, headless: bool):
         self.headless = headless
 
         self.cap = cv2.VideoCapture(filename)
         self.model = YOLO('yolov8n.pt')
         self.event_recorder = event_recorder
-        self.video_writer = video_writer
 
-        # выбранная зона интереса
+        self.video_writer = None
+
+        # координаты выбранной зона интереса
         self.roi = None
 
         # время на смену состояния
@@ -224,6 +226,13 @@ class TableMonitor:
         Главный цикл обработки
         :return:
         """
+        # объект для записи выходного видеофайла
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fps = int(self.cap.get(cv2.CAP_PROP_FPS))
+        width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        self.video_writer = cv2.VideoWriter('output.mp4', fourcc, fps, (width, height))
+
         self.roi = self.get_roi_area()
 
         while True:
@@ -252,7 +261,7 @@ class TableMonitor:
 
             self.draw_overlay(frame)
 
-            if self.video_writer is not None:
+            if self.video_writer:
                 self.video_writer.write(frame)
 
             if not self.headless:
@@ -276,16 +285,14 @@ def main():
     parser = argparse.ArgumentParser(description='детектор событий для зоны интереса')
     parser.add_argument(
         '--video',
-        nargs=1,
         type=str,
         required=True,
         help='путь к видеофайлу'
     )
     parser.add_argument(
         '--headless',
-        default=False,
-        nargs=1,
-        type=bool,
+        default=True,
+        type=lambda x: bool(strtobool(x)),
         help='отображать окно с видеофайлом'
     )
 
@@ -294,6 +301,7 @@ def main():
 
     # отображать или нет окно обработки видео
     headless: bool = args.headless
+    print(headless)
 
     # валидация имени файла
     if not filename.endswith('.mp4'):
@@ -301,15 +309,11 @@ def main():
     elif not os.path.exists(filename):
         raise ValueError(f'файл не найден: {filename}')
 
-    # объект для записи выходного видеофайла
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video_writer = cv2.VideoWriter('output.mp4', fourcc, 15.0, (SCREEN_WIDTH, SCREEN_HEIGHT))
-
     # объект для записи событий
     recorder = EventRecorder()
 
     # основная программа для детекции движения
-    monitor = TableMonitor(filename, video_writer, recorder, headless)
+    monitor = TableMonitor(filename, recorder, headless)
     monitor.run()
 
 
