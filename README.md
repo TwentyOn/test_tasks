@@ -35,8 +35,7 @@
 
 3. OCCUPIED 
    - > EMPTY: в зоне интереса нет людей за последние debounce_sec
-
-наличие людей в зоне интереса реализуется пут
+     
 
 ## Структура проекта
 
@@ -50,10 +49,14 @@
 
 1. установка зависимостей 
 
-```pip install -r requirements.txt ```
+```commandline
+pip install -r requirements.txt
+```
 2. запуск программы
 
-```python main.py --video input.mp4```
+```commandline
+python main.py --video input.mp4
+```
 
 (убедитесь что в имени файла отсутствуют пробелы, или передавайте параметр в кавычках "input 1.mp4")
 
@@ -62,7 +65,10 @@
 выводить окно с процессом обработки видеофайла (false - выводить, true - не
 выводить)
 
-например: ```python main.py --video input.mp4 --headless false``` 
+например: 
+```commandline
+python main.py --video input.mp4 --headless false
+``` 
 
 ## Проблемный кадр
 Человек перекрыт лампой, из-за чего модель считает что людей в кадре нет
