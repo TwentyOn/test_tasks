@@ -1,6 +1,7 @@
 import os.path
 import time
 import argparse
+import tkinter
 
 import cv2
 import numpy as np
@@ -64,7 +65,11 @@ class EventRecorder:
 
 
 class TableMonitor:
-    def __init__(self, filename, video_writer, event_recorder: EventRecorder):
+    """
+    Мониторинг зоны интереса на видео
+    """
+    def __init__(self, filename: str, video_writer, event_recorder: EventRecorder, headless: bool):
+        self.headless = headless
 
         self.cap = cv2.VideoCapture(filename)
         self.model = YOLO('yolov8n.pt')
@@ -242,8 +247,10 @@ class TableMonitor:
             if self.video_writer is not None:
                 self.video_writer.write(frame)
 
-            cv2.imshow('monitor', frame)
-            cv2.resizeWindow('monitor', 1920, 1080)
+            if not self.headless:
+                sc_width, sc_high = tkinter.Tk().winfo_screenwidth(), tkinter.Tk().winfo_height()
+                cv2.imshow('monitor', frame)
+                cv2.resizeWindow('monitor', sc_width, sc_high)
 
             key = cv2.waitKey(30) & 0xFF
             if key == ord('q'):
@@ -258,17 +265,28 @@ class TableMonitor:
 
 
 def main():
+    # аргументы командной строки
     parser = argparse.ArgumentParser(description='детектор событий для зоны интереса')
     parser.add_argument(
-        f'--video',
+        '--video',
         nargs=1,
         type=str,
         required=True,
         help='путь к видеофайлу'
     )
+    parser.add_argument(
+        '--headless',
+        default=False,
+        nargs=1,
+        type=bool,
+        help='отображать окно с видеофайлом'
+    )
 
     args = parser.parse_args()
     filename: str = args.video
+
+    # отображать или нет окно обработки видео
+    headless: bool = args.headless
 
     # валидация имени файла
     if not filename.endswith('.mp4'):
@@ -284,7 +302,7 @@ def main():
     recorder = EventRecorder()
 
     # основная программа для детекции движения
-    monitor = TableMonitor(filename, video_writer, recorder)
+    monitor = TableMonitor(filename, video_writer, recorder, headless)
     monitor.run()
 
 
