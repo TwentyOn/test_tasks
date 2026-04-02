@@ -10,7 +10,7 @@ import numpy as np
 from ultralytics import YOLO
 import pandas as pd
 
-logging.basicConfig(level=logging.INFO, format='[{asctime}] #{levelname:4} - {message}', style='{')
+logging.basicConfig(level=logging.DEBUG, format='[{asctime}] #{levelname:4} - {message}', style='{')
 logger = logging.getLogger(__name__)
 
 
@@ -42,7 +42,8 @@ class EventRecorder:
             'event': event,
             'timestamp': ts
         }
-        logger.info(f'зафиксировано событие: {event}')
+        logger.debug(f'зафиксировано событие: {event}')
+        self.calc_avg_empty()
 
     def calc_avg_empty(self):
         """
@@ -56,7 +57,7 @@ class EventRecorder:
         for i in empty_ev_df.index.tolist():
             start_time = empty_ev_df.loc[i, 'timestamp']
 
-            occupied_ev_df = self.events_df.loc[i:+1:]
+            occupied_ev_df = self.events_df.loc[i+1:]
             occupied_ev_df = occupied_ev_df[occupied_ev_df['event'] == self.event['OCCUPIED']]
             if not occupied_ev_df.empty:
                 end_time = occupied_ev_df.iloc[0]['timestamp']
@@ -242,8 +243,8 @@ class TableMonitor:
                 self.event_recorder.write_to_csv()
 
                 avg_delay = self.event_recorder.calc_avg_empty()
-                print(f'всего событий зарегистировано: {len(self.event_recorder.events_df)}')
-                print(f'cреднее время между уходом гостя и подходом следующего человека: {avg_delay}c')
+                logger.info(f'всего событий зарегистировано: {len(self.event_recorder.events_df)}')
+                logger.info(f'cреднее время между уходом гостя и подходом следующего человека: {avg_delay}c')
 
                 cv2.destroyAllWindows()
                 self.video_writer.release()
@@ -271,8 +272,8 @@ class TableMonitor:
             key = cv2.waitKey(30) & 0xFF
             if key == ord('q'):
                 avg_delay = self.event_recorder.calc_avg_empty()
-                print(f'всего событий зарегистировано: {len(self.event_recorder.events_df)}')
-                print(f'cреднее время между уходом гостя и подходом следующего человека: {avg_delay}c')
+                logger.info(f'всего событий зарегистировано: {len(self.event_recorder.events_df)}')
+                logger.info(f'cреднее время между уходом гостя и подходом следующего человека: {avg_delay}c')
 
                 self.cap.release()
                 self.video_writer.release()
@@ -301,7 +302,6 @@ def main():
 
     # отображать или нет окно обработки видео
     headless: bool = args.headless
-    print(headless)
 
     # валидация имени файла
     if not filename.endswith('.mp4'):
