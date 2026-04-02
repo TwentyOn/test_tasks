@@ -4,6 +4,7 @@ import argparse
 import tkinter
 import logging
 from distutils.util import strtobool
+from collections import deque
 
 import cv2
 import numpy as np
@@ -13,7 +14,7 @@ import pandas as pd
 logging.basicConfig(level=logging.DEBUG, format='[{asctime}] #{levelname:4} - {message}', style='{')
 logger = logging.getLogger(__name__)
 
-
+# клиентские размеры экрана
 SCREEN_WIDTH, SCREEN_HEIGHT = tkinter.Tk().winfo_screenwidth(), tkinter.Tk().winfo_screenheight()
 
 
@@ -57,7 +58,7 @@ class EventRecorder:
         for i in empty_ev_df.index.tolist():
             start_time = empty_ev_df.loc[i, 'timestamp']
 
-            occupied_ev_df = self.events_df.loc[i+1:]
+            occupied_ev_df = self.events_df.loc[i + 1:]
             occupied_ev_df = occupied_ev_df[occupied_ev_df['event'] == self.event['OCCUPIED']]
             if not occupied_ev_df.empty:
                 end_time = occupied_ev_df.iloc[0]['timestamp']
@@ -78,6 +79,7 @@ class TableMonitor:
     """
     Мониторинг зоны интереса на видео
     """
+
     def __init__(self, filename: str, event_recorder: EventRecorder, headless: bool):
         self.headless = headless
 
@@ -90,17 +92,18 @@ class TableMonitor:
         # координаты выбранной зона интереса
         self.roi = None
 
+        self.fps = int(self.cap.get(cv2.CAP_PROP_FPS))
+
         # время на смену состояния
-        self.DEBOUNCE_SEC = 5.0
+        self.DEBOUNCE_SEC = 3.0
+
+        self.window: deque[int] = deque(maxlen=self.fps * int(self.DEBOUNCE_SEC))
 
         # уровень уверенности модели
         self.CONF_THRESHOLD = 0.4
 
         # начальное состояние
         self.state = 'EMPTY'
-
-        # время иземениния состояния
-        self.change_time = 0.0
 
     def get_roi_area(self) -> tuple[int]:
         """
@@ -195,32 +198,25 @@ class TableMonitor:
             1
         )
 
-    def state_machine(self, has_people: bool) -> None:
+    def state_machine(self) -> None:
         """
         Модель конечного автомата для изменения состояний
-        :param has_people:
         :return:
         """
-        if has_people:
+        if sum(self.window):
             if self.state == 'EMPTY':
                 self.event_recorder.log_event('человек у столика')
-                self.last_time = time.time()
                 self.state = 'APPROACH'
             elif self.state == 'APPROACH':
-                if time.time() - self.last_time >= self.DEBOUNCE_SEC:
+                if sum(self.window) == self.fps * self.DEBOUNCE_SEC:
                     self.event_recorder.log_event('столик занят')
-                    self.last_time = 0.0
                     self.state = 'OCCUPIED'
-            else:
-                self.last_time = 0.0
         else:
-            if self.state in ('APPROACH', 'OCCUPIED'):
-                if self.last_time == 0.0:
-                    self.last_time = time.time()
-                elif time.time() - self.last_time >= self.DEBOUNCE_SEC:
-                    self.event_recorder.log_event('столик освободился')
-                    self.state = 'EMPTY'
-                    self.last_time = 0.0
+            if self.state == 'APPROACH':
+                self.state = 'EMPTY'
+            elif self.state == 'OCCUPIED':
+                self.event_recorder.log_event('столик освободился')
+                self.state = 'EMPTY'
 
     def run(self):
         """
@@ -228,14 +224,12 @@ class TableMonitor:
         :return:
         """
         # объект для записи выходного видеофайла
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        fps = int(self.cap.get(cv2.CAP_PROP_FPS))
         width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.video_writer = cv2.VideoWriter('output.mp4', fourcc, fps, (width, height))
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        self.video_writer = cv2.VideoWriter('output.mp4', fourcc, self.fps, (width, height))
 
         self.roi = self.get_roi_area()
-
         while True:
             ret, frame = self.cap.read()
 
@@ -253,6 +247,7 @@ class TableMonitor:
 
             detections = self.detect_pople(frame)
             has_people = self.table_occupied(detections)
+            self.window.append(has_people)
             self.state_machine(has_people)
 
             # if detections:
