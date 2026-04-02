@@ -1,4 +1,6 @@
+import os.path
 import time
+import argparse
 
 import cv2
 import numpy as np
@@ -62,9 +64,9 @@ class EventRecorder:
 
 
 class TableMonitor:
-    def __init__(self, video_writer, event_recorder: EventRecorder):
+    def __init__(self, filename, video_writer, event_recorder: EventRecorder):
 
-        self.cap = cv2.VideoCapture('видео 2.mp4')
+        self.cap = cv2.VideoCapture(filename)
         self.model = YOLO('yolov8n.pt')
         self.event_recorder = event_recorder
         self.video_writer = video_writer
@@ -256,6 +258,24 @@ class TableMonitor:
 
 
 def main():
+    parser = argparse.ArgumentParser(description='детектор событий для зоны интереса')
+    parser.add_argument(
+        f'--video',
+        nargs=1,
+        type=str,
+        required=True,
+        help='путь к видеофайлу'
+    )
+
+    args = parser.parse_args()
+    filename: str = args.video
+
+    # валидация имени файла
+    if not filename.endswith('.mp4'):
+        raise ValueError('неподдерживаемый формат видеофайла. (только mp4)')
+    elif not os.path.exists(filename):
+        raise ValueError(f'файл не найден: {filename}')
+
     # объект для записи выходного видеофайла
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video_writer = cv2.VideoWriter('output.mp4', fourcc, 15.0, (1920, 1080))
@@ -264,7 +284,7 @@ def main():
     recorder = EventRecorder()
 
     # основная программа для детекции движения
-    monitor = TableMonitor(video_writer, recorder)
+    monitor = TableMonitor(filename, video_writer, recorder)
     monitor.run()
 
 
