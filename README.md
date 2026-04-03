@@ -55,7 +55,7 @@
 
 1. клонирование репозитория
 ```commandline
-git clone http://whatever.git -b branch-name
+git clone http://whatever.git -b dodo_task
 ```
 
 2. создать и активировать вртуальное окружение (если не создано)
