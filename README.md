@@ -43,12 +43,24 @@
 Для запуска парсера необходимо установить зависимости и 
 запустить модуль main.py
 
-1. ```commandline
-   pip install -r requirements.txt
-    ```
-2. ```commandline
-    python main.py
-   ```
+1. клонирование репозитория
+```commandline
+git clone https://github.com/TwentyOn/test_tasks.git -b verba-group_task
+```
+
+2. создать и активировать вртуальное окружение (если не создано)
+```commandline
+python -m venv .venv && .venv\Scripts\activate
+```
+
+3. установить зависимости
+```commandline
+pip install -r requirements.txt
+```
+4. запустить скрипт
+```commandline
+python main.py
+```
 
 После запуска будут в терминале будут отображаться детальные логи
 о процессе парсинга
