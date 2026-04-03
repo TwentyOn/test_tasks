@@ -60,7 +60,7 @@ git clone http://whatever.git -b dodo_task && cd test_tasks
 
 2. создать и активировать вртуальное окружение (если не создано)
 
-команда для WIN CMD
+WIN CMD:
 ```commandline
 python -m venv .venv && .venv\Scripts\activate
 ```
