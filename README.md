@@ -45,10 +45,12 @@
 
 1. клонирование репозитория
 ```commandline
-git clone https://github.com/TwentyOn/test_tasks.git -b verba-group_task
+git clone https://github.com/TwentyOn/test_tasks.git -b verba-group_task && cd test_tasks
 ```
 
 2. создать и активировать вртуальное окружение (если не создано)
+
+WIN CMD:
 ```commandline
 python -m venv .venv && .venv\Scripts\activate
 ```
