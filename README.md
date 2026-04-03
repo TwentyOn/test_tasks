@@ -55,7 +55,7 @@
 
 1. клонирование репозитория
 ```commandline
-git clone http://whatever.git -b dodo_task && cd test_tasks
+git clone https://github.com/TwentyOn/test_tasks.git -b dodo_task && cd test_tasks
 ```
 
 2. создать и активировать вртуальное окружение (если не создано)
