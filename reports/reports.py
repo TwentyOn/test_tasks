@@ -7,7 +7,7 @@ from reports.base import ConsoleReport
 from models import MedianCoffeeRecord
 
 
-class MedianCoffeeReport(ConsoleReport):
+class ClickbaitReport(ConsoleReport):
     def _aggregate(self, data: list[MedianCoffeeRecord]) -> dict[str, list[float]]:
         student_coffee_agg = defaultdict(list)
 
