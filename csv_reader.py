@@ -26,3 +26,4 @@ class CSVReader:
     def can_read(filepath: str) -> bool:
         if isinstance(filepath, str):
             return filepath.endswith('.csv')
+        return False
