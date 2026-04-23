@@ -24,4 +24,5 @@ class CSVReader:
 
     @staticmethod
     def can_read(filepath: str) -> bool:
-        return filepath.endswith('.csv')
+        if isinstance(filepath, str):
+            return filepath.endswith('.csv')
