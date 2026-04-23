@@ -57,7 +57,7 @@ python -m venv .venv && .venv\Scripts\activate
 ```
 3. установка зависимостей
 ```commandline
-pip install -r reqirements.txt
+pip install -r requirements.txt
 ```
 4. получить отчет
 ```commandline
