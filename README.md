@@ -1,42 +1,65 @@
-# Тестовое задание 
-
-## О проекте
-Данный репозиторий создан для выполнения тестового задания.
-Проект представляет собой python-скрипт для генерации отчета.
+# Тестовое задание
 
 ## Структура проекта
-- main.py - основной скрипт
-- data - входные данные
-- tests - тесты pytest
+
+```commandline
+├───data                        # входные данные
+│       stats1.csv
+│       stats2.csv
+│
+├───docs
+│       example_launch.png      # тестовый запуск
+│       TZ.docx
+│
+├───reports
+│   │   base.py                 # абстракция для добавления новых отчетов
+│   │   reports.py              # модуль для определения отчетов
+│   └───__init__.py
+│   
+│   
+│
+├───tests
+│       conftest.py
+│       test_median_coffee.py   # тесты для отчета clickbait
+│
+│
+├───csv_reader.py               # модуль с определением логики чтения данных
+│
+├───main.py                     # точка входа в программу
+│
+└───models.py                   # dataclasses для работы с данными
+```
 
 ## Функционал
 Функционал проекта исполнен в соответствии с требованиями 
-[технического задания](docs%2F%D2%C7%20python%20junior%20%28%EC%E0%F0%F2%202026%29.%20%CE%F2%F7%E5%F2%20%EE%20%EF%EE%F2%F0%E5%E1%EB%E5%ED%E8%E8%20%EA%EE%F4%E5.docx)
-. Точка входа в программу исполнена в виде функции main()
+[технического задания](docs/TZ.docx)
+.
 
-Для добавления нового отчета требуется:
-1. создать класс, наследуемый от абстрактного класса ConsoleReport.
-2. определить абстрактные методы с логикой 
-аггрегирования(_aggregate) и расчётов (_calculate) данных
-3. зарегистрировать класс отчета в ReportFactory
-```
-# добавить в функцию main()
-report_factory.register('some_report', SomeReportClass)
-```
+Для добавления нового отчета требуется 
+(пути указаны относительно директории reports):
+1. создать класс, наследуемый от абстрактного класса base.py/ConsoleReport
+в модуле reports.py
+2. определить метод с логикой 
+обработки данных _process в вашем классе
+3. зарегистрировать ваш класс в словаре reports.REPORTS
 
 ## Пример запуска скрипта
 ![img.png](docs/example_launch.png)
 
 ## Запуск
-1. установить зависимости
+1. клонирование репозитория
+```commandline
+git clone https://github.com/TwentyOn/test_tasks.git -b workmate_task && cd test_tasks
+```
+2. установка зависимостей
 ```commandline
 pip install -r reqirements.txt
 ```
-2. получить отчет
+3. получить отчет
 ```commandline
-python main.py --files data/math.csv data/physics.csv data/programming.csv --report median_coffee
+python main.py --report clickbait --files data/stats1.csv data/stats2.csv
 ```
-3. тесты
+4. тесты
 ```commandline
 pytest
 ```
