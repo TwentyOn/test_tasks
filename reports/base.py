@@ -13,7 +13,7 @@ class ConsoleReport(ABC):
         self.reader = CSVReader()
 
     @abstractmethod
-    def _process(self, read_data: list[BaseRecord]) -> list:
+    def _process(self, read_data: list[BaseRecord]) -> list[dict]:
         """Логика обработки данных"""
         raise NotImplementedError
 
@@ -27,7 +27,7 @@ class ConsoleReport(ABC):
         processed_data = self._process(data)
         self.render(processed_data)
 
-    def render(self, generate_data: list) -> None:
+    def render(self, generate_data: list[dict]) -> None:
         """
         Логика вывода отчета в консоль
         :param generate_data:
