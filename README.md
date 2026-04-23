@@ -51,15 +51,19 @@
 ```commandline
 git clone https://github.com/TwentyOn/test_tasks.git -b workmate_task && cd test_tasks
 ```
-2. установка зависимостей
+2. создать и активировать вртуальное окружение (если не создано)
+```commandline
+python -m venv .venv && .venv\Scripts\activate
+```
+3. установка зависимостей
 ```commandline
 pip install -r reqirements.txt
 ```
-3. получить отчет
+4. получить отчет
 ```commandline
 python main.py --report clickbait --files data/stats1.csv data/stats2.csv
 ```
-4. тесты
+5. запуск тестов
 ```commandline
 pytest
 ```
