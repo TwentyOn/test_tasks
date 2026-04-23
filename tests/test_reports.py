@@ -2,13 +2,16 @@ import random
 import sys
 
 import pytest
+
 from main import get_args
+from models import BaseRecord, ClickbaitReportRecord
 
 
 class TestGetArgs:
     """
     Тесты извлечения аргументов CLI
     """
+
     @pytest.mark.parametrize('files, report, error', [
         (['file1.csv', 'file2.csv'], 'clickbait', False),
         (['somefile.csv', 'otherfile.csv'], 'clickbait', False),
@@ -29,6 +32,7 @@ class TestCsvReader:
     """
     Тесты чтения данных из файлов
     """
+
     @pytest.mark.parametrize('filename, ans', [
         ('test.csv', True),
         ('test.txt', False),
@@ -38,65 +42,47 @@ class TestCsvReader:
     def test_can_read(self, fake_csv_reader, filename, ans):
         assert fake_csv_reader.can_read(filename) == ans
 
-    @pytest.mark.parametrize()
-    # def test_read(self, fake_csv_reader, fake_valid_files, fake_valid_data):
-    #     result = fake_csv_reader.read(fake_valid_files[0])
-    #
-    #     magic_index = random.randint(0, len(result) - 1)
-    #
-    #     assert len(result) == len(fake_valid_data)
-    #     assert len(result[magic_index]) == len(fake_valid_data[magic_index])
-    #     assert result[magic_index]['student'] == fake_valid_data[magic_index]['student']
-    #     assert result[magic_index]['coffee_spent'] == fake_valid_data[magic_index]['coffee_spent']
+    @pytest.mark.parametrize('files, error', [
+        ('fake_valid_files', False),
+        ('fake_invalid_name_file', True),
+        ('fake_not_exist_file', True)
+    ])
+    def test_read(self, request, fake_csv_reader, fake_valid_data, files, error):
+        paths = request.getfixturevalue(files)
+        if error:
+            with pytest.raises(ValueError):
+                fake_csv_reader.read(paths)
+        else:
+            data = fake_csv_reader.read(paths)
+            length = len(data)
+            magic_i = random.randrange(0, (length // 3) - 1)
 
-    def test_read_empty_csv(self, fake_csv_reader_cls, fake_empty_file):
-        result = fake_csv_reader_cls().read(fake_empty_file)
+            assert length == len(fake_valid_data) * 3  # 3 файла
+            assert isinstance(data[0], BaseRecord)
+            assert data[magic_i].title == fake_valid_data[magic_i]['title']
 
-        assert len(result) == 0
-        assert result == []
+            assert isinstance(data[magic_i].ctr, float)
+            assert isinstance(data[magic_i].avg_watch_time, float)
+            assert isinstance(data[magic_i].views, int)
+            assert isinstance(data[magic_i].likes, int)
+            assert isinstance(data[magic_i].retention_rate, int)
 
-# class TestMedianCoffeeReport:
-#     def test_read_files(self, fake_report_obj, fake_valid_files, fake_valid_data):
-#         assert len(fake_report_obj._read_files(fake_valid_files)) == len(fake_valid_data) * 3
-#         assert fake_report_obj._read_files(fake_valid_files)[5]['student'] == fake_valid_data[5]['student']
-#
-#     def test_aggregate(self, fake_report_obj, fake_valid_data, fake_valid_files):
-#         unique_students = set((item['student'] for item in fake_valid_data))
-#
-#         test_data = fake_report_obj._read_files(fake_valid_files)
-#         test_data = fake_report_obj._aggregate(test_data)
-#
-#         assert len(test_data) == len(unique_students)
-#         for student, spent in test_data.items():
-#             assert isinstance(student, str)
-#             assert isinstance(spent, list)
-#             assert all(isinstance(s, float) for s in spent)
-#
-#     def test_calculate_median(self, fake_report_obj, fake_valid_data, fake_valid_files):
-#         stud = fake_valid_data[10]['student']
-#         stud_data = filter(lambda item: item['student'] == stud, fake_valid_data)
-#         stud_data = map(lambda item: float(item['coffee_spent']), stud_data)
-#         expected_median = statistics.median(stud_data)
-#
-#         test_data = fake_report_obj._read_files(fake_valid_files)
-#         test_data = fake_report_obj._aggregate(test_data)
-#         test_data = fake_report_obj._calculate(test_data)
-#         test_median = test_data[stud]
-#
-#         assert test_median == expected_median
-#
-#     def test_generate(self, fake_report_obj, fake_valid_files, fake_empty_file):
-#         report = fake_report_obj.generate(fake_valid_files)
-#         empty_report = fake_report_obj.generate([fake_empty_file])
-#
-#         assert isinstance(report, dict)
-#         assert isinstance(empty_report, dict)
-#
-#     def test_render(self, fake_report_obj, fake_valid_files, fake_valid_data):
-#         report = fake_report_obj.generate(fake_valid_files)
-#         report = fake_report_obj.render(report)
-#
-#         test_stud = fake_valid_data[0]['student']
-#
-#         assert isinstance(report, str)
-#         assert test_stud in report
+
+class TestClickbaitReport:
+    def test_generate(self, fake_clickbait_report, fake_valid_files):
+        generate_data = fake_clickbait_report.generate(fake_valid_files)
+
+        assert isinstance(generate_data, list)
+        assert isinstance(generate_data[0], ClickbaitReportRecord)
+        assert generate_data[0].ctr > generate_data[-1].ctr
+        assert min([d.ctr for d in generate_data]) > 15.0
+        assert max([d.retention_rate for d in generate_data]) < 40
+
+    def test_render(self, capsys, fake_clickbait_report, fake_valid_files, fake_valid_data):
+        generate_data = fake_clickbait_report.generate(fake_valid_files)
+        fake_clickbait_report.render(generate_data)
+
+        stream = capsys.readouterr()
+        test_title = generate_data[0].title
+
+        assert test_title in stream.out
