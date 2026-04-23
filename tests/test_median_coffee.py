@@ -5,7 +5,7 @@ from typing import Iterable
 
 import pytest
 
-from main import ReportFactory, ConsoleReport
+from reports.base import ConsoleReport
 
 
 class TestCsvReader:
