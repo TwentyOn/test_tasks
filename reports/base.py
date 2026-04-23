@@ -9,9 +9,8 @@ from models import BaseRecord
 class ConsoleReport(ABC):
     """Асбтрактный класс для генерации отчетов"""
 
-    def __init__(self, cls_data: type[dataclasses.dataclass]):
+    def __init__(self):
         self.reader = CSVReader()
-        self.cls_data = cls_data
 
     @abstractmethod
     def _process(self, read_data: list[BaseRecord]) -> list:
