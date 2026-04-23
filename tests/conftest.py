@@ -1,12 +1,10 @@
 import os
-import sys
 import csv
 import random
 
 import pytest
 from faker import Faker
 
-from main import get_args
 from csv_reader import CSVReader
 from reports.reports import ClickbaitReport
 
@@ -37,8 +35,10 @@ def fake_valid_files(tmp_path, fake_valid_data) -> list[str]:
     for i in range(3):
         path = tmp_path / f'valid_csv{i + 1}.csv'
         with open(path, 'w', encoding='utf-8', newline='') as f:
-            writer = csv.DictWriter(f,
-                                    fieldnames=['title', 'ctr', 'retention_rate', 'views', 'likes', 'avg_watch_time'])
+            writer = csv.DictWriter(
+                f,
+                fieldnames=['title', 'ctr', 'retention_rate', 'views', 'likes', 'avg_watch_time']
+            )
             writer.writeheader()
             writer.writerows(fake_valid_data)
         filepaths.append(str(path))
