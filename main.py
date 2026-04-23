@@ -39,7 +39,8 @@ def get_args() -> argparse.Namespace:
 def main() -> None:
     args = get_args()
     report = REPORTS.get(args.report)()
-    report.generate(args.files)
+    prepare_data = report.generate(args.files)
+    report.render(prepare_data)
 
 
 if __name__ == '__main__':

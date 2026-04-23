@@ -17,7 +17,7 @@ class ConsoleReport(ABC):
         """Логика обработки данных"""
         raise NotImplementedError
 
-    def generate(self, files: list[str]) -> None:
+    def generate(self, files: list[str]) -> list[dict]:
         """
         Логика генерации и вывода отчета
         :param files: список путей к файлам
@@ -25,7 +25,7 @@ class ConsoleReport(ABC):
         """
         data = self.reader.read(files)
         processed_data = self._process(data)
-        self.render(processed_data)
+        return processed_data
 
     def render(self, generate_data: list[dict]) -> None:
         """
