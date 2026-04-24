@@ -15,7 +15,7 @@ def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        f'--files',
+        '--files',
         nargs='+',
         type=str,
         required=True,
@@ -23,7 +23,7 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        f'--report',
+        '--report',
         type=str,
         help='название отчета',
         required=True,

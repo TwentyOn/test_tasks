@@ -1,6 +1,5 @@
 from tabulate import tabulate
 
-import dataclasses
 from abc import ABC, abstractmethod
 from csv_reader import CSVReader
 from models import BaseRecord
