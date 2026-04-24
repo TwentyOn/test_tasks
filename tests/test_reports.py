@@ -17,8 +17,8 @@ class TestGetArgs:
         (['somefile.csv', 'otherfile.csv'], 'clickbait', False),
         (['file1.csv', 'file2.csv'], 'somereport', True),
     ])
-    def test_get_args(self, files, report, error):
-        sys.argv = ['main.py', '--report', report, '--files', *files]
+    def test_get_args(self, monkeypatch, files, report, error):
+        monkeypatch.setattr(sys, 'argv', ['main.py', '--report', report, '--files', *files])
         if error:
             with pytest.raises(SystemExit):
                 get_args()
@@ -68,6 +68,9 @@ class TestCsvReader:
 
 
 class TestClickbaitReport:
+    """
+    Тесты генерации и вывода отчета clickbait
+    """
     def test_generate(self, fake_clickbait_report, fake_valid_files):
         generate_data = fake_clickbait_report.generate(fake_valid_files)
 
