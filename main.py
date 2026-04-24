@@ -3,10 +3,8 @@ import logging
 
 from reports.reports import REPORTS
 
-logging.basicConfig(level=logging.INFO, format='[{asctime}] #{levelname:4} {name}:{lineno} - {message}', style='{')
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-ALLOWED_REPORTS = ['clickbait']
 
 
 def get_args() -> argparse.Namespace:
@@ -29,7 +27,7 @@ def get_args() -> argparse.Namespace:
         type=str,
         help='название отчета',
         required=True,
-        choices=ALLOWED_REPORTS
+        choices=REPORTS.keys()
     )
     args = parser.parse_args()
 
@@ -39,8 +37,11 @@ def get_args() -> argparse.Namespace:
 def main() -> None:
     args = get_args()
     report = REPORTS.get(args.report)()
-    prepare_data = report.generate(args.files)
-    report.render(prepare_data)
+    try:
+        prepare_data = report.generate(args.files)
+        report.render(prepare_data)
+    except Exception as err:
+        logger.error(f'Ошибка генерации отчета - {err}')
 
 
 if __name__ == '__main__':

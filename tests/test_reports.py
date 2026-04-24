@@ -55,17 +55,16 @@ class TestCsvReader:
         else:
             data = fake_csv_reader.read(paths)
             length = len(data)
-            magic_i = random.randrange(0, (length // 3) - 1)
 
             assert length == len(fake_valid_data) * 3  # 3 файла
             assert isinstance(data[0], BaseRecord)
-            assert data[magic_i].title == fake_valid_data[magic_i]['title']
+            assert data[0].title == fake_valid_data[0]['title']
 
-            assert isinstance(data[magic_i].ctr, float)
-            assert isinstance(data[magic_i].avg_watch_time, float)
-            assert isinstance(data[magic_i].views, int)
-            assert isinstance(data[magic_i].likes, int)
-            assert isinstance(data[magic_i].retention_rate, int)
+            assert isinstance(data[0].ctr, float)
+            assert isinstance(data[0].avg_watch_time, float)
+            assert isinstance(data[0].views, int)
+            assert isinstance(data[0].likes, int)
+            assert isinstance(data[0].retention_rate, int)
 
 
 class TestClickbaitReport:
